@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
-import 'settings_page.dart'; // 导入设置页面
+import 'settings_page.dart';
+import 'favorite_page.dart'; // 导入收藏页面
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -282,7 +283,16 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildFunctionItem(IconData icon, String title) {
     return GestureDetector(
       onTap: () {
-        // 处理点击事件
+        if (title == '我的收藏') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FavoritePage(),
+            ),
+          );
+        } else {
+          // 处理其他点击事件
+        }
       },
       child: Column(
         children: [

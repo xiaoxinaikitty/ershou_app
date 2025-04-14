@@ -50,6 +50,15 @@
             <h3>用户注册</h3>
             <p>请求路径：/user/register</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "username": "张三",
+    "phone": "13800138000",
+    "password": "password123",
+    "email": "zhangsan@example.com"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -64,6 +73,13 @@
             <h3>用户登录</h3>
             <p>请求路径：/user/login</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "username": "张三",
+    "password": "password123"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -78,6 +94,13 @@
             <h3>管理员登录</h3>
             <p>请求路径：/user/admin</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "username": "admin",
+    "password": "admin123"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -95,6 +118,18 @@
             <h3>添加用户地址</h3>
             <p>请求路径：/user/address</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "name": "张三",
+    "phone": "13800138000",
+    "province": "北京市",
+    "city": "北京市",
+    "district": "海淀区",
+    "detailAddress": "中关村南大街5号",
+    "isDefault": true
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -130,6 +165,15 @@
             <h3>修改用户信息</h3>
             <p>请求路径：/user/info</p>
             <p>请求方法：PUT</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "username": "张三",
+    "phone": "13800138000",
+    "email": "zhangsan_new@example.com",
+    "avatar": "new_avatar.jpg"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -150,6 +194,13 @@
             <h3>修改用户密码</h3>
             <p>请求路径：/user/password</p>
             <p>请求方法：PUT</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "oldPassword": "password123",
+    "newPassword": "newPassword456"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -187,6 +238,19 @@
             <h3>添加商品</h3>
             <p>请求路径：/product/add</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "title": "iPhone 12",
+    "description": "95新iPhone12",
+    "price": 3999.00,
+    "originalPrice": 5999.00,
+    "categoryId": 1,
+    "conditionLevel": 9,
+    "status": 1,
+    "location": "北京市"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -237,6 +301,16 @@
             <h3>更新商品信息</h3>
             <p>请求路径：/product/update</p>
             <p>请求方法：PUT</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 1,
+    "title": "iPhone 12 Pro",
+    "price": 4999.00,
+    "status": 1,
+    "description": "95新iPhone12 Pro，国行正品"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -275,6 +349,13 @@
             <h3>收藏商品</h3>
             <p>请求路径：/product/favorite/add</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 1,
+    "userId": 1
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -335,6 +416,15 @@
             <h3>添加商品图片</h3>
             <p>请求路径：/product/image/add</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 1,
+    "imageUrl": "http://example.com/images/1.jpg",
+    "isMain": 1,
+    "sortOrder": 0
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -374,6 +464,15 @@
             <h3>举报商品</h3>
             <p>请求路径：/product/report/add</p>
             <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 1,
+    "userId": 1,
+    "reportType": 1,
+    "reportContent": "商品涉嫌虚假宣传"
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -416,15 +515,22 @@
     </div>
 
     <!-- 商品交易方式模块 -->
-<div class="api-section">
-    <h2>商品交易方式模块</h2>
+    <div class="api-section">
+        <h2>商品交易方式模块</h2>
 
-    <div class="api-item">
-        <h3>添加交易方式</h3>
-        <p>请求路径：/product/trade/method/add</p>
-        <p>请求方法：POST</p>
-        <p>响应示例：</p>
-        <pre>
+        <div class="api-item">
+            <h3>添加交易方式</h3>
+            <p>请求路径：/product/trade/method/add</p>
+            <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "methodName": "上门回收",
+    "methodDesc": "由回收人员上门进行商品回收交易"
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
 {
     "code": 0,
     "data": {
@@ -434,9 +540,119 @@
     },
     "message": "success"
 }
-        </pre>
+            </pre>
+        </div>
     </div>
-</div>
+
+     <!-- 订单模块 -->
+     <div class="api-section">
+        <h2>订单模块</h2>
+
+        <div class="api-item">
+            <h3>创建订单</h3>
+            <p>请求路径：/order/create</p>
+            <p>请求方法：POST</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 3,
+    "sellerId": 2,
+    "paymentType": 1,
+    "deliveryType": 2,
+    "orderAmount": 3999.00,
+    "paymentAmount": 3999.00,
+    "deliveryFee": 15.00,
+    "remark": "希望尽快发货",
+    "address": {
+        "receiverName": "张三",
+        "receiverPhone": "13800138000",
+        "province": "北京市",
+        "city": "北京市",
+        "district": "海淀区",
+        "detailAddress": "中关村大街1号"
+    }
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "orderId": 1,
+        "orderNo": "202504141528120123456",
+        "userId": 1,
+        "sellerId": 2,
+        "productId": 3,
+        "productTitle": "iPhone 12",
+        "orderAmount": 3999.00,
+        "paymentAmount": 3999.00,
+        "orderStatus": 0,
+        "paymentType": 1,
+        "deliveryType": 2,
+        "deliveryFee": 15.00,
+        "remark": "希望尽快发货",
+        "createdTime": "2025-04-14 15:28:12",
+        "address": {
+            "receiverName": "张三",
+            "receiverPhone": "13800138000",
+            "province": "北京市",
+            "city": "北京市",
+            "district": "海淀区",
+            "detailAddress": "中关村大街1号"
+        }
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>获取订单列表</h3>
+            <p>请求路径：/order/list</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": [
+        {
+            "orderId": 1,
+            "orderNo": "202504141528120123456",
+            "userId": 1,
+            "sellerId": 2,
+            "productId": 3,
+            "productTitle": "iPhone 12",
+            "orderAmount": 3999.00,
+            "paymentAmount": 3999.00,
+            "orderStatus": 0,
+            "paymentType": 1,
+            "deliveryType": 2,
+            "deliveryFee": 15.00,
+            "remark": "希望尽快发货",
+            "createdTime": "2025-04-14 15:28:12",
+            "address": {
+                "receiverName": "张三",
+                "receiverPhone": "13800138000",
+                "province": "北京市",
+                "city": "北京市",
+                "district": "海淀区",
+                "detailAddress": "中关村大街1号"
+            }
+        }
+    ],
+    "message": "success"
+}
+            </pre>
+        </div>
+    </div>
 
 </body>
 </html>
