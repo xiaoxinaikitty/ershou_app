@@ -652,6 +652,253 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 }
             </pre>
         </div>
+
+        <div class="api-item">
+            <h3>取消订单</h3>
+            <p>请求路径：/order/cancel</p>
+            <p>请求方法：PUT</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "orderId": 1,
+    "remark": "商品不符合预期，申请取消"
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "orderId": 1,
+        "orderNo": "202504141528120123456",
+        "userId": 1,
+        "sellerId": 2,
+        "productId": 3,
+        "productTitle": "iPhone 12",
+        "orderAmount": 3999.00,
+        "paymentAmount": 3999.00,
+        "orderStatus": 4,
+        "paymentType": 1,
+        "deliveryType": 2,
+        "deliveryFee": 15.00,
+        "remark": "希望尽快发货",
+        "createdTime": "2025-04-14 15:28:12",
+        "address": {
+            "receiverName": "张三",
+            "receiverPhone": "13800138000",
+            "province": "北京市",
+            "city": "北京市",
+            "district": "海淀区",
+            "detailAddress": "中关村大街1号"
+        }
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>支付订单</h3>
+            <p>请求路径：/order/pay</p>
+            <p>请求方法：PUT</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "orderId": 1,
+    "userId": 1,
+    "paymentType": 1,
+    "paymentChannel": 2,
+    "transactionNo": "wx202504141528120123456"
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "orderId": 1,
+        "orderNo": "202504141528120123456",
+        "userId": 1,
+        "sellerId": 2,
+        "productId": 3,
+        "productTitle": "iPhone 12",
+        "orderAmount": 3999.00,
+        "paymentAmount": 3999.00,
+        "orderStatus": 1,
+        "paymentType": 1,
+        "paymentChannel": 2,
+        "transactionNo": "wx202504141528120123456",
+        "paymentTime": "2025-04-14 15:28:12",
+        "deliveryType": 2,
+        "deliveryFee": 15.00,
+        "remark": "希望尽快发货",
+        "createdTime": "2025-04-14 15:28:12",
+        "address": {
+            "receiverName": "张三",
+            "receiverPhone": "13800138000",
+            "province": "北京市",
+            "city": "北京市",
+            "district": "海淀区",
+            "detailAddress": "中关村大街1号"
+        }
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>通知收货（发货）</h3>
+            <p>请求路径：/order/notify-shipment</p>
+            <p>请求方法：PUT</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "orderId": 1,
+    "sellerId": 2
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "orderId": 1,
+        "orderNo": "202504141528120123456",
+        "userId": 1,
+        "sellerId": 2,
+        "productId": 3,
+        "productTitle": "iPhone 12",
+        "orderAmount": 3999.00,
+        "paymentAmount": 3999.00,
+        "orderStatus": 2,
+        "paymentType": 1,
+        "paymentTime": "2025-04-14 15:28:12",
+        "deliveryType": 2,
+        "deliveryFee": 15.00,
+        "deliveryTime": "2025-04-15 09:30:45",
+        "remark": "希望尽快发货",
+        "createdTime": "2025-04-14 15:28:12",
+        "address": {
+            "receiverName": "张三",
+            "receiverPhone": "13800138000",
+            "province": "北京市",
+            "city": "北京市",
+            "district": "海淀区",
+            "detailAddress": "中关村大街1号"
+        }
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>确认收货</h3>
+            <p>请求路径：/order/confirm-receipt</p>
+            <p>请求方法：PUT</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "orderId": 1,
+    "userId": 1
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "orderId": 1,
+        "orderNo": "202504141528120123456",
+        "userId": 1,
+        "sellerId": 2,
+        "productId": 3,
+        "productTitle": "iPhone 12",
+        "orderAmount": 3999.00,
+        "paymentAmount": 3999.00,
+        "orderStatus": 3,
+        "paymentType": 1,
+        "paymentTime": "2025-04-14 15:28:12",
+        "deliveryType": 2,
+        "deliveryFee": 15.00,
+        "receivedTime": "2025-04-16 10:30:22",
+        "remark": "希望尽快发货",
+        "createdTime": "2025-04-14 15:28:12",
+        "address": {
+            "receiverName": "张三",
+            "receiverPhone": "13800138000",
+            "province": "北京市",
+            "city": "北京市",
+            "district": "海淀区",
+            "detailAddress": "中关村大街1号"
+        }
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+        
+        <div class="api-item">
+            <h3>订单评价</h3>
+            <p>请求路径：/order/review/add</p>
+            <p>请求方法：POST</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "orderId": 1,
+    "productId": 3,
+    "userId": 1,
+    "sellerId": 2,
+    "content": "商品质量很好，物流速度快，卖家服务态度很好",
+    "rating": 5,
+    "isAnonymous": 0
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "reviewId": 1,
+        "orderId": 1,
+        "productId": 3,
+        "productTitle": "iPhone 12",
+        "userId": 1,
+        "username": "张三",
+        "sellerId": 2,
+        "sellerName": "李四",
+        "content": "商品质量很好，物流速度快，卖家服务态度很好",
+        "rating": 5,
+        "isAnonymous": 0,
+        "hasReply": 0,
+        "createdTime": "2025-04-16 15:30:22"
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+        
     </div>
 
 </body>

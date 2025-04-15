@@ -33,4 +33,16 @@ class Api {
   static const String reportAdd = '/product/report/add'; // 举报商品
   static const String reportList =
       '/product/report/list/'; // 获取商品举报列表，需附加productId
+
+  // 订单模块
+  static const String orderCreate = '/order/create'; // 创建订单
+  static const String orderList = '/order/list'; // 获取订单列表
+  static const String orderCancel = '/order/cancel'; // 取消订单
+  static const String orderPay = '/order/pay'; // 支付订单
+  static const String orderNotifyShipment =
+      '/order/notify-shipment'; // 通知收货（发货）
+  static const String orderConfirmReceipt = '/order/confirm-receipt'; // 确认收货
+
+  // 消息模块
+  static const String messageSend = '/message/send'; // 发送消息
 }

@@ -4,6 +4,9 @@ import '../network/api.dart';
 import '../network/http_util.dart';
 import 'settings_page.dart';
 import 'favorite_page.dart'; // 导入收藏页面
+import 'order/pending_payment_page.dart'; // 导入待付款页面
+import 'order/waiting_shipment_page.dart'; // 导入待发货页面
+import 'order/order_receiving_page.dart'; // 导入待收货页面
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -376,19 +379,46 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildOrderItem(IconData icon, String title) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          size: 24,
-          color: AppTheme.primaryColor,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ],
+    return GestureDetector(
+      onTap: () {
+        // 处理点击事件
+        if (title == '待付款') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PendingPaymentPage(),
+            ),
+          );
+        } else if (title == '待发货') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const WaitingShipmentPage(),
+            ),
+          );
+        } else if (title == '待收货') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const OrderReceivingPage(),
+            ),
+          );
+        }
+      },
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            size: 24,
+            color: AppTheme.primaryColor,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 
