@@ -9,6 +9,7 @@ import 'order/pending_payment_page.dart'; // 导入待付款页面
 import 'order/waiting_shipment_page.dart'; // 导入待发货页面
 import 'order/order_receiving_page.dart'; // 导入待收货页面
 import 'auth/login_page.dart'; // 导入登录页面
+import 'my_posts_page.dart'; // 导入我的发布页面
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -405,6 +406,13 @@ class _ProfilePageState extends State<ProfilePage> {
             context,
             MaterialPageRoute(
               builder: (context) => const FavoritePage(),
+            ),
+          );
+        } else if (title == '我的发布') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MyPostsPage(),
             ),
           );
         } else {

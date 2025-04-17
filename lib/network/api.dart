@@ -11,12 +11,14 @@ class Api {
   static const String userInfo = '/user/info'; // 获取/修改用户信息
   static const String userPassword = '/user/password'; // 修改用户密码
   static const String userRole = '/user/role'; // 获取用户角色信息
+  static const String userProducts = '/user/products'; // 获取用户发布的商品列表
 
   // 文件上传
   static const String fileUpload = '/file/upload'; // 文件上传
 
   // 商品模块
   static const String productAdd = '/product/add'; // 添加商品
+  static const String productList = '/product/list'; // 分页查询商品列表
   static const String productDetail = '/product/detail/'; // 获取商品详情，需附加productId
   static const String productUpdate = '/product/update'; // 更新商品信息
   static const String productDelete = '/product/delete/'; // 删除商品，需附加productId
