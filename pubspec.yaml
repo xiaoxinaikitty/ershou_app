@@ -39,6 +39,8 @@ dependencies:
   dio: ^5.4.0
   # 本地存储
   shared_preferences: ^2.2.2
+  # 图片选择器
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

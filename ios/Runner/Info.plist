@@ -41,9 +41,15 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>需要使用相机拍摄商品照片</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问您的照片库来选择商品图片</string>
 </dict>
 </plist>

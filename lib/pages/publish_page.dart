@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
 import '../widgets/primary_button.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:developer' as developer;
 
 class PublishPage extends StatefulWidget {
   const PublishPage({Key? key}) : super(key: key);
@@ -34,6 +38,68 @@ class _PublishPageState extends State<PublishPage> {
   ];
 
   final List<Map<String, dynamic>> _imageList = [];
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    // 在页面初始化时检查是否有丢失的数据
+    _retrieveLostData();
+  }
+
+  // 检索因为应用被系统杀死可能丢失的图片数据
+  Future<void> _retrieveLostData() async {
+    try {
+      final LostDataResponse response = await _picker.retrieveLostData();
+      if (response.isEmpty) {
+        return;
+      }
+
+      final List<XFile>? files = response.files;
+      if (files != null && files.isNotEmpty) {
+        for (final XFile file in files) {
+          _processPickedImage(file);
+        }
+      } else if (response.file != null) {
+        _processPickedImage(response.file!);
+      }
+    } catch (e) {
+      print('检索丢失数据时发生错误: $e');
+    }
+  }
+
+  // 处理选择的图片文件
+  Future<void> _processPickedImage(XFile image) async {
+    try {
+      final File imageFile = File(image.path);
+      final fileSize = await imageFile.length();
+      final fileName = image.name;
+      final filePath = image.path;
+
+      // 控制台打印图片信息
+      print('选择的图片信息:');
+      print('文件名: $fileName');
+      print('文件路径: $filePath');
+      print('文件大小: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+      print('文件类型: ${fileName.split('.').last}');
+
+      setState(() {
+        _imageList.add({
+          'url': image.path,
+          'name': fileName,
+          'size': fileSize,
+          'file': imageFile,
+        });
+      });
+    } catch (e) {
+      print('处理图片时出错: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('处理图片时出错: $e')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -341,12 +407,19 @@ class _PublishPageState extends State<PublishPage> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.image, color: Colors.white),
-                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _imageList[index]['url'].startsWith('/')
+                        ? Image.file(
+                            File(_imageList[index]['url']),
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : const Center(
+                            child: Icon(Icons.image, color: Colors.white),
+                          ),
                   ),
                   Positioned(
                     right: 0,
@@ -376,12 +449,43 @@ class _PublishPageState extends State<PublishPage> {
     );
   }
 
-  void _addImage() {
-    // 实际应用中，这里应该打开相机或图库选择图片
+  void _addImage() async {
+    // 使用image_picker打开图库选择图片
     if (_imageList.length < 9) {
-      setState(() {
-        _imageList.add({'url': 'mock_image_url_${_imageList.length + 1}'});
-      });
+      try {
+        // 使用更安全的调用方式
+        final XFile? image = await _picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1800,
+          maxHeight: 1800,
+          imageQuality: 85,
+        );
+
+        if (image != null) {
+          await _processPickedImage(image);
+        }
+      } on PlatformException catch (e) {
+        print('PlatformException: ${e.code}, ${e.message}, ${e.details}');
+        String errorMessage = '选择图片时出错';
+
+        // 更详细的错误提示
+        if (e.code == 'photo_access_denied') {
+          errorMessage = '无法访问相册，请检查应用权限设置';
+        } else if (e.code == 'camera_access_denied') {
+          errorMessage = '无法访问相机，请检查应用权限设置';
+        } else {
+          errorMessage = '选择图片时出错: ${e.message}';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      } catch (e) {
+        print('选择图片时出错: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('选择图片时出错: $e')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('最多只能上传9张图片')),
