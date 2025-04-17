@@ -26,6 +26,10 @@ class _PublishPageState extends State<PublishPage> {
   String _location = '北京市';
 
   bool _isLoading = false;
+  bool _isUploading = false;
+  double _uploadProgress = 0.0;
+  String _currentUploadingFile = '';
+
   final List<String> _categories = [
     '手机数码',
     '电脑办公',
@@ -124,51 +128,189 @@ class _PublishPageState extends State<PublishPage> {
 
     setState(() {
       _isLoading = true;
+      _isUploading = true;
+      _uploadProgress = 0.0;
+      _currentUploadingFile = '准备上传图片...';
     });
 
     try {
-      final response = await HttpUtil().post(
+      // 1. 首先上传所有图片
+      List<String> uploadedImageUrls = [];
+      int mainImageIndex = 0; // 默认第一张为主图
+
+      for (int i = 0; i < _imageList.length; i++) {
+        File imageFile = _imageList[i]['file'];
+        String fileName = imageFile.path.split('/').last;
+
+        setState(() {
+          _currentUploadingFile =
+              '上传图片(${i + 1}/${_imageList.length}): $fileName';
+          _uploadProgress = 0.0;
+        });
+
+        try {
+          // 上传图片文件
+          final uploadResponse = await HttpUtil().uploadFile(
+            imageFile,
+            onSendProgress: (sent, total) {
+              if (mounted) {
+                setState(() {
+                  _uploadProgress = sent / total;
+                });
+              }
+              developer.log('图片上传进度: $sent/$total', name: 'PublishPage');
+            },
+          );
+
+          if (uploadResponse.isSuccess && uploadResponse.data != null) {
+            // 获取上传成功后的图片URL
+            String imageUrl = uploadResponse.data!['fileUrl'];
+            uploadedImageUrls.add(imageUrl);
+
+            developer.log('图片上传成功: $imageUrl', name: 'PublishPage');
+          } else {
+            developer.log('单张图片上传失败: ${uploadResponse.message}',
+                name: 'PublishPage');
+            // 继续上传其他图片，不中断流程
+          }
+        } catch (e) {
+          developer.log('单张图片上传异常: $e', name: 'PublishPage');
+          // 继续上传其他图片，不中断流程
+        }
+      }
+
+      if (uploadedImageUrls.isEmpty) {
+        throw Exception('所有图片上传失败，请检查网络连接或图片格式');
+      }
+
+      setState(() {
+        _isUploading = false;
+        _currentUploadingFile = '正在发布商品...';
+      });
+
+      // 2. 发布商品
+      final productResponse = await HttpUtil().post(
         Api.productAdd,
         data: {
           'title': _titleController.text,
+          'description': _descriptionController.text,
           'price': double.parse(_priceController.text),
           'originalPrice': double.parse(_originalPriceController.text),
-          'description': _descriptionController.text,
           'categoryId': _categories.indexOf(_selectedCategory) + 1,
           'conditionLevel': _conditionLevel,
+          'status': 1, // 默认状态为1(上架)
           'location': _location,
         },
       );
 
-      if (response.isSuccess) {
-        // 发布成功，可以上传图片
-        final productId = response.data['productId'];
+      if (productResponse.isSuccess && productResponse.data != null) {
+        // 成功发布商品，获取商品ID
+        final productId = productResponse.data['productId'];
 
-        // 上传图片逻辑（简化示例）
-        // 对于每张图片，调用图片上传接口
-        // for (var imageData in _imageList) {
-        //   await uploadImage(productId, imageData);
-        // }
+        setState(() {
+          _currentUploadingFile = '关联商品图片...';
+        });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('商品发布成功')),
-        );
+        try {
+          // 3. 批量添加商品图片信息到数据库
+          final imageResponse = await HttpUtil().post(
+            Api.imageAdd,
+            data: {
+              'productId': productId,
+              'isMain': 1, // 设置有主图
+              'sortOrder': 0,
+              'imageUrls': uploadedImageUrls,
+            },
+          );
 
-        // 清空表单
+          if (imageResponse.isSuccess) {
+            developer.log('图片批量关联成功', name: 'PublishPage');
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('商品发布成功'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          } else {
+            developer.log('图片批量关联失败: ${imageResponse.message}',
+                name: 'PublishPage');
+
+            // 尝试单独添加第一张图片作为主图
+            if (uploadedImageUrls.isNotEmpty) {
+              final singleImageResponse = await HttpUtil().post(
+                Api.imageAddByUrl,
+                data: {
+                  'productId': productId,
+                  'imageUrl': uploadedImageUrls[0],
+                  'isMain': 1,
+                  'sortOrder': 0,
+                },
+              );
+
+              if (singleImageResponse.isSuccess) {
+                developer.log('单张主图添加成功', name: 'PublishPage');
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('商品发布成功，但仅添加了主图'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('商品发布成功，但图片关联失败'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('商品发布成功，但图片关联失败: ${imageResponse.message}'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        } catch (e) {
+          developer.log('图片关联异常: $e', name: 'PublishPage');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('商品发布成功，但图片关联出现异常'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+
+        // 发布成功后清空表单
         _resetForm();
+
+        // 可以选择导航到商品详情页或其他页面
+        // Navigator.pushNamed(context, '/product_detail', arguments: productId);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.message ?? '发布失败')),
+          SnackBar(
+            content: Text(productResponse.message ?? '发布失败'),
+            duration: const Duration(seconds: 2),
+          ),
         );
       }
     } catch (e) {
+      developer.log('发布商品异常: $e', name: 'PublishPage');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('网络错误，请稍后再试')),
+        SnackBar(
+          content: Text('发布失败: $e'),
+          duration: const Duration(seconds: 2),
+        ),
       );
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _isUploading = false;
+          _currentUploadingFile = '';
         });
       }
     }
@@ -196,166 +338,209 @@ class _PublishPageState extends State<PublishPage> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
+        child: Stack(
           children: [
-            // 图片上传区域
-            _buildImageUploadSection(),
-            const SizedBox(height: 20),
-
-            // 商品标题
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: '商品标题',
-                hintText: '请输入商品标题（15字以内）',
-                border: OutlineInputBorder(),
-              ),
-              maxLength: 15,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入商品标题';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 价格区域
-            Row(
+            ListView(
+              padding: const EdgeInsets.all(16.0),
               children: [
-                // 现价
-                Expanded(
-                  child: TextFormField(
-                    controller: _priceController,
-                    decoration: const InputDecoration(
-                      labelText: '现价(元)',
-                      border: OutlineInputBorder(),
-                      prefixText: '¥',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入价格';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return '请输入有效价格';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // 原价
-                Expanded(
-                  child: TextFormField(
-                    controller: _originalPriceController,
-                    decoration: const InputDecoration(
-                      labelText: '原价(元)',
-                      border: OutlineInputBorder(),
-                      prefixText: '¥',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入原价';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return '请输入有效原价';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                // 图片上传区域
+                _buildImageUploadSection(),
+                const SizedBox(height: 20),
 
-            // 分类选择
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: '商品分类',
-                border: OutlineInputBorder(),
-              ),
-              value: _selectedCategory,
-              items: _categories.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(category),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value!;
-                });
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请选择商品分类';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 新旧程度
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('新旧程度: $_conditionLevel成新'),
-                Slider(
-                  value: _conditionLevel.toDouble(),
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  label: '$_conditionLevel成新',
-                  activeColor: AppTheme.primaryColor,
-                  onChanged: (value) {
-                    setState(() {
-                      _conditionLevel = value.round();
-                    });
+                // 商品标题
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: '商品标题',
+                    hintText: '请输入商品标题（15字以内）',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLength: 15,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请输入商品标题';
+                    }
+                    return null;
                   },
                 ),
+                const SizedBox(height: 16),
+
+                // 价格区域
+                Row(
+                  children: [
+                    // 现价
+                    Expanded(
+                      child: TextFormField(
+                        controller: _priceController,
+                        decoration: const InputDecoration(
+                          labelText: '现价(元)',
+                          border: OutlineInputBorder(),
+                          prefixText: '¥',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '请输入价格';
+                          }
+                          if (double.tryParse(value) == null) {
+                            return '请输入有效价格';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // 原价
+                    Expanded(
+                      child: TextFormField(
+                        controller: _originalPriceController,
+                        decoration: const InputDecoration(
+                          labelText: '原价(元)',
+                          border: OutlineInputBorder(),
+                          prefixText: '¥',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '请输入原价';
+                          }
+                          if (double.tryParse(value) == null) {
+                            return '请输入有效原价';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 分类选择
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: '商品分类',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _selectedCategory,
+                  items: _categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value!;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请选择商品分类';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 新旧程度
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('新旧程度: $_conditionLevel成新'),
+                    Slider(
+                      value: _conditionLevel.toDouble(),
+                      min: 1,
+                      max: 10,
+                      divisions: 9,
+                      label: '$_conditionLevel成新',
+                      activeColor: AppTheme.primaryColor,
+                      onChanged: (value) {
+                        setState(() {
+                          _conditionLevel = value.round();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 商品描述
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: '商品描述',
+                    hintText: '请详细描述您的商品，如成色、使用感受等',
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  maxLines: 5,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '请输入商品描述';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 发布位置
+                ListTile(
+                  leading: const Icon(Icons.location_on_outlined),
+                  title: const Text('发布位置'),
+                  subtitle: Text(_location),
+                  onTap: () {
+                    // 位置选择功能
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // 发布按钮
+                PrimaryButton(
+                  text: '发布商品',
+                  onPressed: _publishProduct,
+                  isLoading: _isLoading,
+                ),
+                const SizedBox(height: 20),
               ],
             ),
-            const SizedBox(height: 16),
 
-            // 商品描述
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: '商品描述',
-                hintText: '请详细描述您的商品，如成色、使用感受等',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
+            // 上传进度指示器
+            if (_isUploading)
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: Container(
+                    width: 300,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _currentUploadingFile,
+                          style: const TextStyle(fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        LinearProgressIndicator(
+                          value: _uploadProgress,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppTheme.primaryColor),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '${(_uploadProgress * 100).toStringAsFixed(0)}%',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              maxLines: 5,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入商品描述';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 发布位置
-            ListTile(
-              leading: const Icon(Icons.location_on_outlined),
-              title: const Text('发布位置'),
-              subtitle: Text(_location),
-              onTap: () {
-                // 位置选择功能
-              },
-            ),
-            const SizedBox(height: 32),
-
-            // 发布按钮
-            PrimaryButton(
-              text: '发布商品',
-              onPressed: _publishProduct,
-              isLoading: _isLoading,
-            ),
           ],
         ),
       ),

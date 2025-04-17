@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
 import 'api.dart';
 import 'api_response.dart';
+import 'dart:io';
 
 /// HTTP请求工具类，单例模式
 class HttpUtil {
@@ -288,6 +289,59 @@ class HttpUtil {
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       return _handleException<T>(e);
+    }
+  }
+
+  // 文件上传方法
+  Future<ApiResponse<Map<String, dynamic>>> uploadFile(
+    File file, {
+    String path = Api.fileUpload,
+    Map<String, dynamic>? extraData,
+    void Function(int, int)? onSendProgress,
+  }) async {
+    try {
+      developer.log('开始上传文件: ${file.path}', name: 'HttpUtil');
+
+      // 创建FormData对象
+      String fileName = file.path.split('/').last;
+      FormData formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+        ),
+        // 添加其他可能的表单数据
+        ...?extraData,
+      });
+
+      // 准备特殊的请求选项，设置Content-Type为multipart/form-data
+      Options options = Options(
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      );
+
+      // 发送请求
+      final response = await _dio.post(
+        path,
+        data: formData,
+        options: options,
+        onSendProgress: onSendProgress,
+      );
+
+      developer.log('文件上传响应: ${response.data}', name: 'HttpUtil');
+      return ApiResponse<Map<String, dynamic>>.fromJson(
+        response.data,
+        (json) => json as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      developer.log('文件上传异常: ${e.message}', name: 'HttpUtil');
+      return _handleException<Map<String, dynamic>>(e);
+    } catch (e) {
+      developer.log('文件上传一般异常: $e', name: 'HttpUtil');
+      return ApiResponse(
+        code: -1,
+        message: '文件上传失败: $e',
+      );
     }
   }
 

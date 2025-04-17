@@ -12,6 +12,9 @@ class Api {
   static const String userPassword = '/user/password'; // 修改用户密码
   static const String userRole = '/user/role'; // 获取用户角色信息
 
+  // 文件上传
+  static const String fileUpload = '/file/upload'; // 文件上传
+
   // 商品模块
   static const String productAdd = '/product/add'; // 添加商品
   static const String productDetail = '/product/detail/'; // 获取商品详情，需附加productId
@@ -25,7 +28,9 @@ class Api {
   static const String favoriteList = '/product/favorite/list'; // 获取收藏列表
 
   // 商品图片模块
-  static const String imageAdd = '/product/image/add'; // 添加商品图片
+  static const String imageAdd = '/product/image/add'; // 添加或批量添加商品图片
+  static const String imageAddByUrl =
+      '/product/image/add-by-url'; // 通过URL添加商品图片
   static const String imageDelete =
       '/product/image/'; // 删除商品图片，需附加productId/imageId
 

@@ -327,6 +327,100 @@
         </div>
 
         <div class="api-item">
+            <h3>通过URL添加商品图片</h3>
+            <p>请求路径：/product/image/add-by-url</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：application/json</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 1,
+    "imageUrl": "https://example.com/images/product1.jpg",
+    "isMain": 1,
+    "sortOrder": 0
+}
+            </pre>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "imageId": 1,
+        "productId": 1,
+        "imageUrl": "https://example.com/images/product1.jpg",
+        "isMain": 1,
+        "sortOrder": 0
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>批量添加商品图片</h3>
+            <p>请求路径：/product/image/add</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：application/json</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 1,
+    "isMain": 1,
+    "sortOrder": 0,
+    "imageUrls": [
+        "https://example.com/images/product1.jpg",
+        "https://example.com/images/product2.jpg",
+        "https://example.com/images/product3.jpg"
+    ]
+}
+            </pre>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": [
+        {
+            "imageId": 1,
+            "productId": 1,
+            "imageUrl": "https://example.com/images/product1.jpg",
+            "isMain": 1,
+            "sortOrder": 0,
+            "createdTime": "2025-04-14 10:30:00"
+        },
+        {
+            "imageId": 2,
+            "productId": 1,
+            "imageUrl": "https://example.com/images/product2.jpg",
+            "isMain": 0,
+            "sortOrder": 1,
+            "createdTime": "2025-04-14 10:30:00"
+        },
+        {
+            "imageId": 3,
+            "productId": 1,
+            "imageUrl": "https://example.com/images/product3.jpg",
+            "isMain": 0,
+            "sortOrder": 2,
+            "createdTime": "2025-04-14 10:30:00"
+        }
+    ],
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>删除商品图片</h3>
+
+        <div class="api-item">
             <h3>删除商品</h3>
             <p>请求路径：/product/delete/{productId}</p>
             <p>请求方法：DELETE</p>
