@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'dart:developer' as developer;
 import '../../config/theme.dart';
 import '../../network/api.dart';
 import '../../network/http_util.dart';
@@ -51,6 +52,8 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      developer.log('尝试登录: ${_usernameController.text}', name: 'LoginPage');
+
       final response = await HttpUtil().post<String>(
         Api.userLogin,
         data: {
@@ -59,19 +62,63 @@ class _LoginPageState extends State<LoginPage> {
         },
       );
 
-      if (response.isSuccess && response.data != null) {
-        // 登录成功，保存token
-        await HttpUtil().saveToken(response.data!);
+      developer.log(
+          '登录响应: ${response.code}, ${response.message}, 数据类型: ${response.data.runtimeType}',
+          name: 'LoginPage');
 
-        // 登录成功后跳转到主页
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/home');
+      if (response.isSuccess && response.data != null) {
+        // 确保token是字符串
+        String token = '';
+        if (response.data is String) {
+          token = response.data as String;
+        } else if (response.data is Map) {
+          // 兼容后端返回格式可能是 {"token": "xxx"} 的情况
+          final dataMap = response.data as Map;
+          if (dataMap.containsKey('token')) {
+            token = dataMap['token'].toString();
+          } else {
+            // 尝试直接转换为字符串
+            token = response.data.toString();
+          }
+        } else {
+          // 尝试直接转换为字符串
+          token = response.data.toString();
+        }
+
+        developer.log('保存Token: $token', name: 'LoginPage');
+
+        // 确保token不为空
+        if (token.isNotEmpty) {
+          // 登录成功，保存token
+          await HttpUtil().saveToken(token);
+
+          // 立即尝试获取用户信息，用于诊断授权问题
+          try {
+            developer.log('登录成功后立即尝试获取用户信息', name: 'LoginPage');
+            final userResponse = await HttpUtil().get(Api.userInfo);
+            developer.log(
+                '用户信息响应: ${userResponse.code}, ${userResponse.message}',
+                name: 'LoginPage');
+            developer.log('用户信息数据: ${userResponse.data}', name: 'LoginPage');
+          } catch (e) {
+            developer.log('登录后获取用户信息异常: $e', name: 'LoginPage', error: e);
+          }
+
+          // 登录成功后跳转到主页
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          setState(() {
+            _errorMessage = '获取到的Token为空，请稍后再试';
+          });
+        }
       } else {
         setState(() {
           _errorMessage = response.message ?? '登录失败，请检查用户名和密码';
         });
       }
     } catch (e) {
+      developer.log('登录异常: $e', name: 'LoginPage', error: e);
       setState(() {
         _errorMessage = '网络错误，请稍后再试';
       });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
@@ -7,6 +8,7 @@ import 'favorite_page.dart'; // 导入收藏页面
 import 'order/pending_payment_page.dart'; // 导入待付款页面
 import 'order/waiting_shipment_page.dart'; // 导入待发货页面
 import 'order/order_receiving_page.dart'; // 导入待收货页面
+import 'auth/login_page.dart'; // 导入登录页面
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -18,6 +20,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _userInfo;
   bool _isLoading = true;
+  bool _isError = false;
+  String _errorMessage = '';
+  int _retryCount = 0;
+  final int _maxRetries = 2;
 
   @override
   void initState() {
@@ -26,36 +32,101 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _fetchUserInfo() async {
+    setState(() {
+      _isLoading = true;
+      _isError = false;
+      _errorMessage = '';
+    });
+
     try {
+      // 首先检查是否有token
+      final token = await HttpUtil().getToken();
+      if (token == null || token.isEmpty) {
+        developer.log('获取用户信息失败: Token为空', name: 'ProfilePage');
+        setState(() {
+          _isLoading = false;
+          _isError = true;
+          _errorMessage = '您尚未登录，请先登录';
+        });
+        // 只有在确认没有token时才跳转到登录页
+        _navigateToLogin(clearToken: false); // 避免重复清除token
+        return;
+      }
+
+      developer.log('开始获取用户信息, Token存在', name: 'ProfilePage');
       final response = await HttpUtil().get(Api.userInfo);
+      developer.log('用户信息响应: ${response.code}, ${response.message}',
+          name: 'ProfilePage');
 
       if (response.isSuccess && response.data != null) {
         setState(() {
           _userInfo = response.data as Map<String, dynamic>;
           _isLoading = false;
+          _retryCount = 0; // 重置重试计数
         });
+        developer.log('用户信息获取成功: ${_userInfo?.toString()}',
+            name: 'ProfilePage');
       } else {
-        setState(() {
-          _isLoading = false;
-        });
+        // 获取失败但有响应
+        developer.log('获取用户信息失败: ${response.message}', name: 'ProfilePage');
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('获取用户信息失败')),
-          );
+        // 仅当服务器明确返回401未授权错误时才认为是token无效
+        if (response.code == 401) {
+          setState(() {
+            _isLoading = false;
+            _isError = true;
+            _errorMessage = '登录已过期，请重新登录';
+          });
+          // 仅在401错误时清除token并跳转登录页
+          _navigateToLogin(clearToken: true);
+        } else if (_retryCount < _maxRetries) {
+          // 其他错误尝试重试
+          _retryCount++;
+          developer.log('尝试重试获取用户信息，第$_retryCount次', name: 'ProfilePage');
+          await Future.delayed(const Duration(seconds: 1));
+          _fetchUserInfo();
+        } else {
+          // 重试次数用完，显示错误但不退出登录
+          setState(() {
+            _isLoading = false;
+            _isError = true;
+            _errorMessage = response.message ?? '获取用户信息失败，请重试';
+          });
         }
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      developer.log('获取用户信息异常: $e', name: 'ProfilePage', error: e);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('网络错误，请稍后再试')),
-        );
+      if (_retryCount < _maxRetries) {
+        // 异常情况下也尝试重试
+        _retryCount++;
+        developer.log('尝试重试获取用户信息，第$_retryCount次', name: 'ProfilePage');
+        await Future.delayed(const Duration(seconds: 1));
+        _fetchUserInfo();
+      } else {
+        // 网络异常不应导致登出，只显示错误提示
+        setState(() {
+          _isLoading = false;
+          _isError = true;
+          _errorMessage = '网络错误，请稍后再试';
+        });
       }
     }
+  }
+
+  // 跳转到登录页
+  void _navigateToLogin({bool clearToken = true}) {
+    // 使用延迟确保状态更新后再跳转
+    Future.delayed(Duration.zero, () {
+      if (mounted) {
+        if (clearToken) {
+          HttpUtil().clearToken(); // 只在指定时清除token
+        }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    });
   }
 
   void _logout() async {
@@ -64,6 +135,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed('/login');
     } catch (e) {
+      developer.log('退出登录异常: $e', name: 'ProfilePage');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('退出登录失败')),
@@ -76,6 +148,48 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_isError) {
+      return Scaffold(
+        appBar: AppBar(
+          title:
+              const Text('个人中心', style: TextStyle(fontWeight: FontWeight.bold)),
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 60,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _fetchUserInfo,
+                child: const Text('重新加载'),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                child: const Text('去登录'),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
