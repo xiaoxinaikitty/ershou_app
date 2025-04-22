@@ -10,7 +10,9 @@ import 'dart:developer' as developer;
 import 'package:permission_handler/permission_handler.dart';
 
 class PublishPage extends StatefulWidget {
-  const PublishPage({Key? key}) : super(key: key);
+  final Map<String, dynamic>? product; // 添加product参数用于编辑功能
+
+  const PublishPage({Key? key, this.product}) : super(key: key);
 
   @override
   State<PublishPage> createState() => _PublishPageState();
@@ -25,6 +27,7 @@ class _PublishPageState extends State<PublishPage> {
   String _selectedCategory = '手机数码';
   int _conditionLevel = 9; // 默认9成新
   String _location = '北京市';
+  int? _productId; // 添加productId用于编辑时使用
 
   // 位置信息相关
   bool _isLocating = false;
@@ -75,8 +78,36 @@ class _PublishPageState extends State<PublishPage> {
   @override
   void initState() {
     super.initState();
+    // 如果是编辑模式，初始化表单数据
+    if (widget.product != null) {
+      _initializeFormData();
+    }
     // 在页面初始化时检查是否有丢失的数据
     _retrieveLostData();
+  }
+
+  // 初始化表单数据
+  void _initializeFormData() {
+    final product = widget.product!;
+    _productId = product['productId'] as int?;
+    _titleController.text = product['title'] as String? ?? '';
+    _priceController.text = (product['price'] ?? 0.0).toString();
+    _originalPriceController.text =
+        (product['originalPrice'] ?? 0.0).toString();
+    _descriptionController.text = product['description'] as String? ?? '';
+    _selectedCategory = _categories[((product['categoryId'] as int? ?? 1) - 1)];
+    _conditionLevel = product['conditionLevel'] as int? ?? 9;
+    _location = product['location'] as String? ?? '北京市';
+
+    // 如果有图片，添加到图片列表
+    if (product['mainImageUrl'] != null) {
+      _imageList.add({
+        'url': product['mainImageUrl'],
+        'name': 'main_image',
+        'size': 0,
+        'file': null,
+      });
+    }
   }
 
   // 检索因为应用被系统杀死可能丢失的图片数据
@@ -209,8 +240,8 @@ class _PublishPageState extends State<PublishPage> {
       int mainImageIndex = 0; // 默认第一张为主图
 
       for (int i = 0; i < _imageList.length; i++) {
-        File imageFile = _imageList[i]['file'];
-        String fileName = imageFile.path.split('/').last;
+        File? imageFile = _imageList[i]['file'];
+        String fileName = _imageList[i]['name'] as String;
 
         setState(() {
           _currentUploadingFile =
@@ -219,9 +250,15 @@ class _PublishPageState extends State<PublishPage> {
         });
 
         try {
+          // 如果是编辑模式且图片是已有的，直接使用原URL
+          if (imageFile == null && _imageList[i]['url'] != null) {
+            uploadedImageUrls.add(_imageList[i]['url'] as String);
+            continue;
+          }
+
           // 上传图片文件
           final uploadResponse = await HttpUtil().uploadFile(
-            imageFile,
+            imageFile!,
             onSendProgress: (sent, total) {
               if (mounted) {
                 setState(() {
@@ -258,24 +295,31 @@ class _PublishPageState extends State<PublishPage> {
         _currentUploadingFile = '正在发布商品...';
       });
 
-      // 2. 发布商品
+      // 2. 发布或更新商品
+      final Map<String, dynamic> productData = {
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'price': double.parse(_priceController.text),
+        'originalPrice': double.parse(_originalPriceController.text),
+        'categoryId': _categories.indexOf(_selectedCategory) + 1,
+        'conditionLevel': _conditionLevel,
+        'status': 1, // 默认状态为1(上架)
+        'location': _location,
+      };
+
+      // 如果是编辑模式，添加productId
+      if (_productId != null) {
+        productData['productId'] = _productId;
+      }
+
       final productResponse = await HttpUtil().post(
-        Api.productAdd,
-        data: {
-          'title': _titleController.text,
-          'description': _descriptionController.text,
-          'price': double.parse(_priceController.text),
-          'originalPrice': double.parse(_originalPriceController.text),
-          'categoryId': _categories.indexOf(_selectedCategory) + 1,
-          'conditionLevel': _conditionLevel,
-          'status': 1, // 默认状态为1(上架)
-          'location': _location,
-        },
+        _productId != null ? Api.productUpdate : Api.productAdd,
+        data: productData,
       );
 
       if (productResponse.isSuccess && productResponse.data != null) {
-        // 成功发布商品，获取商品ID
-        final productId = productResponse.data['productId'];
+        // 成功发布或更新商品，获取商品ID
+        final productId = _productId ?? productResponse.data['productId'];
 
         setState(() {
           _currentUploadingFile = '关联商品图片...';
@@ -287,9 +331,8 @@ class _PublishPageState extends State<PublishPage> {
             Api.imageAdd,
             data: {
               'productId': productId,
-              'isMain': 1, // 设置有主图
-              'sortOrder': 0,
               'imageUrls': uploadedImageUrls,
+              'mainImageIndex': 0, // 设置第一张图片为主图
             },
           );
 
@@ -297,11 +340,16 @@ class _PublishPageState extends State<PublishPage> {
             developer.log('图片批量关联成功', name: 'PublishPage');
 
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('商品发布成功'),
-                duration: Duration(seconds: 2),
+              SnackBar(
+                content: Text(_productId != null ? '商品更新成功' : '商品发布成功'),
+                duration: const Duration(seconds: 2),
               ),
             );
+
+            // 返回true表示操作成功
+            if (mounted) {
+              Navigator.of(context).pop(true);
+            }
           } else {
             developer.log('图片批量关联失败: ${imageResponse.message}',
                 name: 'PublishPage');
@@ -314,7 +362,6 @@ class _PublishPageState extends State<PublishPage> {
                   'productId': productId,
                   'imageUrl': uploadedImageUrls[0],
                   'isMain': 1,
-                  'sortOrder': 0,
                 },
               );
 
@@ -322,47 +369,71 @@ class _PublishPageState extends State<PublishPage> {
                 developer.log('单张主图添加成功', name: 'PublishPage');
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('商品发布成功，但仅添加了主图'),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: Text(_productId != null
+                        ? '商品更新成功，但仅更新了主图'
+                        : '商品发布成功，但仅添加了主图'),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
+
+                // 返回true表示操作成功
+                if (mounted) {
+                  Navigator.of(context).pop(true);
+                }
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('商品发布成功，但图片关联失败'),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: Text(_productId != null
+                        ? '商品更新成功，但图片更新失败'
+                        : '商品发布成功，但图片关联失败'),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
+
+                // 返回true表示操作成功
+                if (mounted) {
+                  Navigator.of(context).pop(true);
+                }
               }
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('商品发布成功，但图片关联失败: ${imageResponse.message}'),
+                  content: Text(_productId != null
+                      ? '商品更新成功，但图片更新失败: ${imageResponse.message}'
+                      : '商品发布成功，但图片关联失败: ${imageResponse.message}'),
                   duration: const Duration(seconds: 2),
                 ),
               );
+
+              // 返回true表示操作成功
+              if (mounted) {
+                Navigator.of(context).pop(true);
+              }
             }
           }
         } catch (e) {
           developer.log('图片关联异常: $e', name: 'PublishPage');
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('商品发布成功，但图片关联出现异常'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text(
+                  _productId != null ? '商品更新成功，但图片更新出现异常' : '商品发布成功，但图片关联出现异常'),
+              duration: const Duration(seconds: 2),
             ),
           );
+
+          // 返回true表示操作成功
+          if (mounted) {
+            Navigator.of(context).pop(true);
+          }
         }
 
         // 发布成功后清空表单
         _resetForm();
-
-        // 可以选择导航到商品详情页或其他页面
-        // Navigator.pushNamed(context, '/product_detail', arguments: productId);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(productResponse.message ?? '发布失败'),
+            content: Text(productResponse.message ?? '操作失败'),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -371,7 +442,7 @@ class _PublishPageState extends State<PublishPage> {
       developer.log('发布商品异常: $e', name: 'PublishPage');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('发布失败: $e'),
+          content: Text('操作失败: $e'),
           duration: const Duration(seconds: 2),
         ),
       );

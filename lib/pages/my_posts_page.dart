@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
+import 'publish_page.dart'; // 导入发布页面用于编辑功能
 
 class MyPostsPage extends StatefulWidget {
   const MyPostsPage({Key? key}) : super(key: key);
@@ -110,9 +111,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
       final Map<String, dynamic> params = {
         'pageNum': _pageNum,
         'pageSize': _pageSize,
-        'sellerId': _userId,
-        'sortField': 'time',
-        'sortOrder': 'desc',
+        'userId': _userId, // 添加userId作为查询参数
       };
 
       // 发送请求获取用户已发布的商品
@@ -255,6 +254,24 @@ class _MyPostsPageState extends State<MyPostsPage> {
     );
   }
 
+  // 编辑商品
+  void _editProduct(Map<String, dynamic> product) {
+    // 导航到发布页面，并传入商品信息
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PublishPage(
+          product: product, // 传入商品信息用于编辑
+        ),
+      ),
+    ).then((value) {
+      // 编辑完成后刷新列表
+      if (value == true) {
+        _refreshPosts();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -329,8 +346,17 @@ class _MyPostsPageState extends State<MyPostsPage> {
           ElevatedButton(
             onPressed: () {
               // 导航到发布页面
-              Navigator.pop(context);
-              // TODO: 添加导航到发布页面的代码
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PublishPage(),
+                ),
+              ).then((value) {
+                // 发布完成后刷新列表
+                if (value == true) {
+                  _refreshPosts();
+                }
+              });
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
@@ -374,8 +400,23 @@ class _MyPostsPageState extends State<MyPostsPage> {
     final productId = post['productId'] as int? ?? -1;
     final title = post['title'] as String? ?? '未命名商品';
     final price = post['price'] ?? 0.0;
-    // 使用主图URL
-    final String imageUrl = post['mainImageUrl'] as String? ?? '';
+    // 使用主图URL，检查多个可能的字段名
+    String imageUrl = post['mainImageUrl'] as String? ??
+        post['imageUrl'] as String? ??
+        post['mainImage'] as String? ??
+        '';
+
+    // 处理图片URL，将localhost替换为正确的服务器地址
+    if (imageUrl.isNotEmpty) {
+      if (imageUrl.startsWith('http://localhost:8080')) {
+        imageUrl = imageUrl.replaceFirst(
+            'http://localhost:8080', 'http://192.168.200.30:8080');
+      } else if (imageUrl.startsWith('/files/')) {
+        imageUrl = 'http://192.168.200.30:8080$imageUrl';
+      }
+      developer.log('处理后的图片URL: $imageUrl', name: 'MyPostsPage');
+    }
+
     final status = post['status'] as int? ?? 1;
     final String statusText = _getStatusText(status);
     final createdTime = post['createdTime'] as String? ?? '未知时间';
@@ -411,6 +452,8 @@ class _MyPostsPageState extends State<MyPostsPage> {
                           height: 100,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
+                            developer.log('图片加载失败: $error, URL: $imageUrl',
+                                name: 'MyPostsPage');
                             return Container(
                               width: 100,
                               height: 100,
@@ -513,7 +556,7 @@ class _MyPostsPageState extends State<MyPostsPage> {
                   onPressed: status != 0
                       ? () {
                           // 编辑商品
-                          // TODO: 实现编辑商品功能
+                          _editProduct(post);
                         }
                       : null,
                   child: const Text('编辑'),
