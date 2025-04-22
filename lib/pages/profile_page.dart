@@ -79,9 +79,18 @@ class _ProfilePageState extends State<ProfilePage> {
           postCount = productList.length;
         }
 
+        // 获取收藏数量
+        final favoritesResponse = await HttpUtil().get(Api.favoriteList);
+        int favoriteCount = 0;
+        if (favoritesResponse.isSuccess && favoritesResponse.data != null) {
+          final List<dynamic> favoriteList = favoritesResponse.data;
+          favoriteCount = favoriteList.length;
+        }
+
         setState(() {
           _userInfo = userInfo;
           _userInfo?['postCount'] = postCount; // 添加发布数量到用户信息中
+          _userInfo?['favoriteCount'] = favoriteCount; // 添加收藏数量到用户信息中
           _isLoading = false;
           _retryCount = 0; // 重置重试计数
         });
@@ -285,6 +294,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final username = _userInfo?['username'] ?? '用户';
     final phone = _userInfo?['phone'] ?? '未设置手机号';
     final postCount = _userInfo?['postCount']?.toString() ?? '0';
+    final favoriteCount = _userInfo?['favoriteCount']?.toString() ?? '0';
 
     return Container(
       width: double.infinity,
@@ -354,7 +364,7 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatItem('发布', postCount),
-              _buildStatItem('收藏', '36'),
+              _buildStatItem('收藏', favoriteCount),
               _buildStatItem('关注', '48'),
               _buildStatItem('粉丝', '25'),
             ],
