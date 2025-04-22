@@ -40,7 +40,8 @@ dependencies:
   # 本地存储
   shared_preferences: ^2.2.2
   # 图片选择器
-  image_picker: ^1.1.2
+  image_picker: ^0.8.7
+  permission_handler: ^10.2.0  # 权限处理
 
 dev_dependencies:
   flutter_test:

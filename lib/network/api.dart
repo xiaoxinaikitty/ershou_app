@@ -22,6 +22,7 @@ class Api {
   static const String productDetail = '/product/detail/'; // 获取商品详情，需附加productId
   static const String productUpdate = '/product/update'; // 更新商品信息
   static const String productDelete = '/product/delete/'; // 删除商品，需附加productId
+  static const String productLocationAdd = '/product/location/add'; // 添加商品位置信息
 
   // 商品收藏模块
   static const String favoriteAdd = '/product/favorite/add'; // 收藏商品
@@ -35,6 +36,8 @@ class Api {
       '/product/image/add-by-url'; // 通过URL添加商品图片
   static const String imageDelete =
       '/product/image/'; // 删除商品图片，需附加productId/imageId
+  static const String imageList =
+      '/product/image/list/'; // 获取商品图片列表，需附加productId
 
   // 商品举报模块
   static const String reportAdd = '/product/report/add'; // 举报商品

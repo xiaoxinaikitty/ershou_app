@@ -118,7 +118,7 @@ class _HomePageState extends State<HomePage> {
     final products = List.generate(
       10,
       (index) => {
-        'title': '商品 ${index + 1}',
+        'title': '手机 ${index + 1}',
         'price': '¥${(index + 1) * 100}',
         'image': 'https://via.placeholder.com/150',
         'location': '北京市',

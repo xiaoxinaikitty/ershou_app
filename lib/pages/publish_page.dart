@@ -7,6 +7,7 @@ import '../widgets/primary_button.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:developer' as developer;
+import 'package:permission_handler/permission_handler.dart';
 
 class PublishPage extends StatefulWidget {
   const PublishPage({Key? key}) : super(key: key);
@@ -25,10 +26,37 @@ class _PublishPageState extends State<PublishPage> {
   int _conditionLevel = 9; // 默认9成新
   String _location = '北京市';
 
+  // 位置信息相关
+  bool _isLocating = false;
+
   bool _isLoading = false;
   bool _isUploading = false;
   double _uploadProgress = 0.0;
   String _currentUploadingFile = '';
+
+  // 城市列表
+  final List<String> _cities = [
+    '北京市',
+    '上海市',
+    '广州市',
+    '深圳市',
+    '杭州市',
+    '南京市',
+    '成都市',
+    '重庆市',
+    '武汉市',
+    '西安市',
+    '天津市',
+    '苏州市',
+    '郑州市',
+    '长沙市',
+    '东莞市',
+    '沈阳市',
+    '青岛市',
+    '合肥市',
+    '佛山市',
+    '宁波市'
+  ];
 
   final List<String> _categories = [
     '手机数码',
@@ -70,6 +98,48 @@ class _PublishPageState extends State<PublishPage> {
     } catch (e) {
       print('检索丢失数据时发生错误: $e');
     }
+  }
+
+  // 显示位置选择对话框
+  void _showLocationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('选择位置'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _cities.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(_cities[index]),
+                    selected: _location == _cities[index],
+                    onTap: () {
+                      // 更新位置
+                      this.setState(() {
+                        _location = _cities[index];
+                      });
+                      Navigator.of(context).pop();
+                    },
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('取消'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   // 处理选择的图片文件
@@ -488,9 +558,8 @@ class _PublishPageState extends State<PublishPage> {
                   leading: const Icon(Icons.location_on_outlined),
                   title: const Text('发布位置'),
                   subtitle: Text(_location),
-                  onTap: () {
-                    // 位置选择功能
-                  },
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _showLocationDialog,
                 ),
                 const SizedBox(height: 32),
 

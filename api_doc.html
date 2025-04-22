@@ -272,6 +272,38 @@
         </div>
 
         <div class="api-item">
+            <h3>上传商品图片</h3>
+            <p>请求路径：/product/image/upload</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：multipart/form-data</p>
+            <p>请求参数：</p>
+            <pre>
+productId: 1 (商品ID，必填)
+isMain: 1 (是否为主图，0-否，1-是，可选，默认0)
+sortOrder: 0 (图片排序，可选，默认0)
+imageFile: [文件] (图片文件，必填，支持jpg、jpeg、png、gif格式)
+            </pre>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "imageId": 1,
+        "productId": 1,
+        "imageUrl": "http://localhost:8080/images/2e45f7a1-b8c2-4d3a-9e1c-7b164aa95f23.jpg",
+        "isMain": 1,
+        "sortOrder": 0
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
             <h3>获取商品详情</h3>
             <p>请求路径：/product/detail/{productId}</p>
             <p>请求方法：GET</p>
@@ -419,124 +451,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
         <div class="api-item">
             <h3>删除商品图片</h3>
-
-        <div class="api-item">
-            <h3>删除商品</h3>
-            <p>请求路径：/product/delete/{productId}</p>
-            <p>请求方法：DELETE</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": "商品删除成功",
-    "message": "success"
-}
-            </pre>
-        </div>
-    </div>
-
-    <!-- 商品收藏模块 -->
-    <div class="api-section">
-        <h2>商品收藏模块</h2>
-
-        <div class="api-item">
-            <h3>收藏商品</h3>
-            <p>请求路径：/product/favorite/add</p>
-            <p>请求方法：POST</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 1,
-    "userId": 1
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "favoriteId": 1,
-        "productId": 1,
-        "userId": 1,
-        "createdTime": "2025-04-14 10:00:00"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>取消收藏商品</h3>
-            <p>请求路径：/product/favorite/{productId}</p>
-            <p>请求方法：DELETE</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": "取消收藏成功",
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取收藏列表</h3>
-            <p>请求路径：/product/favorite/list</p>
-            <p>请求方法：GET</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": [
-        {
-            "favoriteId": 1,
-            "productId": 1,
-            "productTitle": "iPhone 12",
-            "productPrice": 3999.00,
-            "createdTime": "2025-04-14 10:00:00"
-        }
-    ],
-    "message": "success"
-}
-            </pre>
-        </div>
-    </div>
-
-    <!-- 商品图片模块 -->
-    <div class="api-section">
-        <h2>商品图片模块</h2>
-
-        <div class="api-item">
-            <h3>添加商品图片</h3>
-            <p>请求路径：/product/image/add</p>
-            <p>请求方法：POST</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 1,
-    "imageUrl": "http://example.com/images/1.jpg",
-    "isMain": 1,
-    "sortOrder": 0
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "imageId": 1,
-        "productId": 1,
-        "imageUrl": "http://example.com/images/1.jpg",
-        "isMain": 1,
-        "sortOrder": 0
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>删除商品图片</h3>
             <p>请求路径：/product/image/{productId}/{imageId}</p>
             <p>请求方法：DELETE</p>
             <p>响应示例：</p>
@@ -544,6 +458,41 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 {
     "code": 0,
     "data": "图片删除成功",
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>获取商品图片列表</h3>
+            <p>请求路径：/product/image/list/{productId}</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": [
+        {
+            "imageId": 1,
+            "productId": 1,
+            "imageUrl": "http://localhost:8080/images/2e45f7a1-b8c2-4d3a-9e1c-7b164aa95f23.jpg",
+            "isMain": 1,
+            "sortOrder": 0,
+            "createdTime": "2025-04-14 10:00:00"
+        },
+        {
+            "imageId": 2,
+            "productId": 1,
+            "imageUrl": "http://localhost:8080/images/3f56e8b2-c9d3-4e2b-8f2d-9a275bb86f34.jpg",
+            "isMain": 0,
+            "sortOrder": 1,
+            "createdTime": "2025-04-14 10:00:00"
+        }
+    ],
     "message": "success"
 }
             </pre>
