@@ -183,8 +183,8 @@ class _FavoritePageState extends State<FavoritePage> {
           children: [
             // 商品图片
             Container(
-              width: 100,
-              height: 100,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(8),
@@ -192,7 +192,7 @@ class _FavoritePageState extends State<FavoritePage> {
               child: const Icon(
                 Icons.image,
                 color: Colors.white,
-                size: 40,
+                size: 30,
               ),
             ),
             const SizedBox(width: 12),
@@ -204,22 +204,22 @@ class _FavoritePageState extends State<FavoritePage> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     '¥$price',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     '收藏时间: $createdTime',
                     style: TextStyle(
@@ -227,7 +227,7 @@ class _FavoritePageState extends State<FavoritePage> {
                       color: Colors.grey[600],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -238,17 +238,25 @@ class _FavoritePageState extends State<FavoritePage> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.primaryColor,
                           side: BorderSide(color: AppTheme.primaryColor),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          minimumSize: const Size(0, 30),
                         ),
-                        child: const Text('查看详情'),
+                        child:
+                            const Text('查看详情', style: TextStyle(fontSize: 12)),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                       OutlinedButton(
                         onPressed: () => _cancelFavorite(productId),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.grey,
                           side: const BorderSide(color: Colors.grey),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          minimumSize: const Size(0, 30),
                         ),
-                        child: const Text('取消收藏'),
+                        child:
+                            const Text('取消收藏', style: TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),
