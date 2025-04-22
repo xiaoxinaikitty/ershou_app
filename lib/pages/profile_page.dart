@@ -10,6 +10,8 @@ import 'order/waiting_shipment_page.dart'; // 导入待发货页面
 import 'order/order_receiving_page.dart'; // 导入待收货页面
 import 'auth/login_page.dart'; // 导入登录页面
 import 'my_posts_page.dart'; // 导入我的发布页面
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -25,6 +27,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String _errorMessage = '';
   int _retryCount = 0;
   final int _maxRetries = 2;
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploadingAvatar = false;
 
   @override
   void initState() {
@@ -173,6 +177,80 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // 上传头像
+  Future<void> _uploadAvatar() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _isUploadingAvatar = true;
+        });
+
+        final File imageFile = File(image.path);
+        final uploadResponse = await HttpUtil().uploadFile(
+          imageFile,
+          onSendProgress: (sent, total) {
+            developer.log('头像上传进度: $sent/$total', name: 'ProfilePage');
+          },
+        );
+
+        if (uploadResponse.isSuccess && uploadResponse.data != null) {
+          final String imageUrl = uploadResponse.data!['fileUrl'];
+
+          // 更新用户头像
+          final updateResponse = await HttpUtil().put(
+            Api.userInfo,
+            data: {
+              'avatar': imageUrl,
+            },
+          );
+
+          if (updateResponse.isSuccess) {
+            setState(() {
+              _userInfo?['avatar'] = imageUrl;
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('头像更新成功')),
+              );
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(updateResponse.message ?? '头像更新失败')),
+              );
+            }
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(uploadResponse.message ?? '头像上传失败')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      developer.log('上传头像异常: $e', name: 'ProfilePage');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('上传头像失败，请重试')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingAvatar = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -295,6 +373,27 @@ class _ProfilePageState extends State<ProfilePage> {
     final phone = _userInfo?['phone'] ?? '未设置手机号';
     final postCount = _userInfo?['postCount']?.toString() ?? '0';
     final favoriteCount = _userInfo?['favoriteCount']?.toString() ?? '0';
+    final avatarUrl = _userInfo?['avatar'];
+
+    // 处理头像URL
+    String? processedAvatarUrl;
+    if (avatarUrl != null) {
+      if (avatarUrl.startsWith('http')) {
+        // 如果URL包含localhost，替换为服务器地址
+        if (avatarUrl.contains('localhost')) {
+          processedAvatarUrl =
+              avatarUrl.replaceAll('localhost:8080', '192.168.200.30:8080');
+        } else {
+          processedAvatarUrl = avatarUrl;
+        }
+      } else if (avatarUrl.startsWith('/')) {
+        // 如果是相对路径，添加服务器地址
+        processedAvatarUrl = '${Api.baseUrl}$avatarUrl';
+      } else {
+        // 如果是文件名，添加服务器地址和图片目录
+        processedAvatarUrl = '${Api.baseUrl}/images/$avatarUrl';
+      }
+    }
 
     return Container(
       width: double.infinity,
@@ -316,13 +415,39 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             children: [
               // 头像
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: AppTheme.secondaryColor,
-                child: Icon(
-                  Icons.person,
-                  size: 36,
-                  color: AppTheme.primaryColor,
+              GestureDetector(
+                onTap: _isUploadingAvatar ? null : _uploadAvatar,
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: AppTheme.secondaryColor,
+                      backgroundImage: processedAvatarUrl != null
+                          ? NetworkImage(processedAvatarUrl)
+                          : null,
+                      child: processedAvatarUrl == null
+                          ? Icon(
+                              Icons.person,
+                              size: 36,
+                              color: AppTheme.primaryColor,
+                            )
+                          : null,
+                    ),
+                    if (_isUploadingAvatar)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
@@ -353,7 +478,12 @@ class _ProfilePageState extends State<ProfilePage> {
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {
-                  // 编辑个人资料
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsPage(),
+                    ),
+                  );
                 },
               ),
             ],
