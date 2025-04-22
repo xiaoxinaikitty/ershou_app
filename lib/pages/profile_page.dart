@@ -60,8 +60,28 @@ class _ProfilePageState extends State<ProfilePage> {
           name: 'ProfilePage');
 
       if (response.isSuccess && response.data != null) {
+        final userInfo = response.data as Map<String, dynamic>;
+        final userId = userInfo['userId'];
+
+        // 获取用户发布的商品数量
+        final Map<String, dynamic> params = {
+          'pageNum': 1,
+          'pageSize': 100, // 设置一个较大的值以获取所有商品
+          'userId': userId,
+        };
+
+        final productsResponse =
+            await HttpUtil().get(Api.productList, params: params);
+        int postCount = 0;
+        if (productsResponse.isSuccess && productsResponse.data != null) {
+          final data = productsResponse.data as Map<String, dynamic>;
+          final List<dynamic> productList = data['list'] ?? [];
+          postCount = productList.length;
+        }
+
         setState(() {
-          _userInfo = response.data as Map<String, dynamic>;
+          _userInfo = userInfo;
+          _userInfo?['postCount'] = postCount; // 添加发布数量到用户信息中
           _isLoading = false;
           _retryCount = 0; // 重置重试计数
         });
@@ -264,6 +284,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildUserInfoCard() {
     final username = _userInfo?['username'] ?? '用户';
     final phone = _userInfo?['phone'] ?? '未设置手机号';
+    final postCount = _userInfo?['postCount']?.toString() ?? '0';
 
     return Container(
       width: double.infinity,
@@ -332,7 +353,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('发布', '12'),
+              _buildStatItem('发布', postCount),
               _buildStatItem('收藏', '36'),
               _buildStatItem('关注', '48'),
               _buildStatItem('粉丝', '25'),
