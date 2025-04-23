@@ -55,4 +55,24 @@ class Api {
 
   // 消息模块
   static const String messageSend = '/message/send'; // 发送消息
+
+  // 钱包模块
+  static const String walletCreate = '/api/wallet/create'; // 创建钱包账户
+  static const String walletInfo = '/api/wallet/info'; // 查询钱包账户信息
+  static const String walletUpdate = '/api/wallet/update'; // 更新钱包账户余额
+  static const String walletFreeze = '/api/wallet/freeze'; // 冻结/解冻钱包账户余额
+  static const String walletTransactionCreate =
+      '/api/wallet/transaction/create'; // 创建钱包交易记录
+  static const String walletTransactionList =
+      '/api/wallet/transaction/list'; // 查询钱包交易记录列表
+
+  // 支付密码模块
+  static const String paymentPasswordSet =
+      '/api/wallet/payment-password/set'; // 设置支付密码
+  static const String paymentPasswordVerify =
+      '/api/wallet/payment-password/verify'; // 验证支付密码
+  static const String paymentPasswordSendResetCode =
+      '/api/wallet/payment-password/send-reset-code'; // 发送重置支付密码验证码
+  static const String paymentPasswordReset =
+      '/api/wallet/payment-password/reset'; // 重置支付密码
 }

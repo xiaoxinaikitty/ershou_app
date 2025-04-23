@@ -276,11 +276,14 @@ class _PendingPaymentPageState extends State<PendingPaymentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '订单号: ${order.orderNo}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
+                Flexible(
+                  child: Text(
+                    '订单号: ${order.orderNo}',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
@@ -349,11 +352,14 @@ class _PendingPaymentPageState extends State<PendingPaymentPage> {
                               color: AppTheme.primaryColor,
                             ),
                           ),
-                          Text(
-                            '下单时间: ${order.createdTime.split(' ')[0]}',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
+                          Flexible(
+                            child: Text(
+                              '下单时间: ${order.createdTime.split(' ')[0]}',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -370,9 +376,12 @@ class _PendingPaymentPageState extends State<PendingPaymentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '商品金额',
-                  style: TextStyle(color: Colors.grey[600]),
+                Flexible(
+                  child: Text(
+                    '商品金额',
+                    style: TextStyle(color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Text('¥${order.orderAmount.toStringAsFixed(2)}'),
               ],
@@ -383,9 +392,12 @@ class _PendingPaymentPageState extends State<PendingPaymentPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '运费',
-                    style: TextStyle(color: Colors.grey[600]),
+                  Flexible(
+                    child: Text(
+                      '运费',
+                      style: TextStyle(color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   Text('¥${order.deliveryFee!.toStringAsFixed(2)}'),
                 ],
@@ -397,10 +409,13 @@ class _PendingPaymentPageState extends State<PendingPaymentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '实付款',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                const Flexible(
+                  child: Text(
+                    '实付款',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
@@ -417,28 +432,31 @@ class _PendingPaymentPageState extends State<PendingPaymentPage> {
             const Divider(),
 
             // 按钮组
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: () => _cancelOrder(order),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey[300]!),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => _cancelOrder(order),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    child: const Text(
+                      '取消订单',
+                      style: TextStyle(color: Colors.black54),
+                    ),
                   ),
-                  child: const Text(
-                    '取消订单',
-                    style: TextStyle(color: Colors.black54),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () => _payOrder(order),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                    ),
+                    child: const Text('去支付'),
                   ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () => _payOrder(order),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                  ),
-                  child: const Text('去支付'),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

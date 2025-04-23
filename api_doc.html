@@ -235,6 +235,635 @@
         <h2>商品模块</h2>
 
         <div class="api-item">
+            <h3>添加发布商品位置</h3>
+            <p>接口描述：添加发布商品时选择的位置信息(省市区)，插入到数据库中，并返回插入记录的ID</p>
+            <p>请求路径：/product/location/add</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：application/json</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "province": "广东省",
+    "city": "深圳市",
+    "district": "南山区"
+}
+            </pre>
+            <p>请求数据模型：</p>
+            <pre>
+// ReleaseLocationDao.java
+public class ReleaseLocationDao {
+    
+    /**
+     * 省份名称
+     */
+    @NotBlank(message = "省份不能为空")
+    private String province;
+    
+    /**
+     * 城市名称
+     */
+    @NotBlank(message = "城市不能为空")
+    private String city;
+    
+    /**
+     * 区/县名称
+     */
+    @NotBlank(message = "区/县不能为空")
+    private String district;
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>返回数据</td>
+                </tr>
+                <tr>
+                    <td>data.id</td>
+                    <td>int</td>
+                    <td>位置记录ID</td>
+                </tr>
+                <tr>
+                    <td>data.province</td>
+                    <td>string</td>
+                    <td>省份名称</td>
+                </tr>
+                <tr>
+                    <td>data.city</td>
+                    <td>string</td>
+                    <td>城市名称</td>
+                </tr>
+                <tr>
+                    <td>data.district</td>
+                    <td>string</td>
+                    <td>区/县名称</td>
+                </tr>
+            </table>
+            <p>响应数据模型：</p>
+            <pre>
+// ReleaseLocationVO.java
+public class ReleaseLocationVO {
+    
+    /**
+     * 位置记录ID
+     */
+    private Integer id;
+    
+    /**
+     * 省份名称
+     */
+    private String province;
+    
+    /**
+     * 城市名称
+     */
+    private String city;
+    
+    /**
+     * 区/县名称
+     */
+    private String district;
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "id": 1,
+        "province": "广东省",
+        "city": "深圳市",
+        "district": "南山区"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>需要用户登录后访问此接口</li>
+                <li>此接口适用于发布商品时添加商品所在位置信息</li>
+                <li>返回的位置记录ID可用于商品表的location字段</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>分页查询商品列表</h3>
+            <p>接口描述：分页获取商品列表，支持多种筛选条件和排序方式</p>
+            <p>请求路径：/product/list</p>
+            <p>请求方法：GET</p>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>pageNum</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>当前页码，从1开始，默认1</td>
+                </tr>
+                <tr>
+                    <td>pageSize</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>每页数量，默认10，最大50</td>
+                </tr>
+                <tr>
+                    <td>keyword</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>商品标题关键词搜索</td>
+                </tr>
+                <tr>
+                    <td>categoryId</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>商品分类ID筛选</td>
+                </tr>
+                <tr>
+                    <td>minPrice</td>
+                    <td>否</td>
+                    <td>double</td>
+                    <td>价格下限筛选</td>
+                </tr>
+                <tr>
+                    <td>maxPrice</td>
+                    <td>否</td>
+                    <td>double</td>
+                    <td>价格上限筛选</td>
+                </tr>
+                <tr>
+                    <td>sortField</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>排序字段(price-价格, time-时间, view-浏览量)，默认time</td>
+                </tr>
+                <tr>
+                    <td>sortOrder</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>排序方式(asc-升序, desc-降序)，默认desc</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>商品状态筛选(0下架 1在售 2已售)，默认1</td>
+                </tr>
+                <tr>
+                    <td>minConditionLevel</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>最低成色等级筛选(1-10)</td>
+                </tr>
+                <tr>
+                    <td>location</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>地区筛选</td>
+                </tr>
+                <tr>
+                    <td>sellerId</td>
+                    <td>否</td>
+                    <td>long</td>
+                    <td>卖家用户ID筛选</td>
+                </tr>
+            </table>
+            <p>请求数据模型：</p>
+            <pre>
+// ProductPageQueryDao.java
+public class ProductPageQueryDao {
+    
+    /**
+     * 当前页码，从1开始
+     */
+    private Integer pageNum = 1;
+    
+    /**
+     * 每页数量，默认10
+     */
+    private Integer pageSize = 10;
+    
+    /**
+     * 商品标题关键词
+     */
+    private String keyword;
+    
+    /**
+     * 商品分类ID
+     */
+    private Integer categoryId;
+    
+    /**
+     * 价格下限
+     */
+    private Double minPrice;
+    
+    /**
+     * 价格上限
+     */
+    private Double maxPrice;
+    
+    /**
+     * 排序字段 (price-价格, time-时间, view-浏览量)
+     */
+    private String sortField = "time";
+    
+    /**
+     * 排序方式 (asc-升序, desc-降序)
+     */
+    private String sortOrder = "desc";
+    
+    /**
+     * 商品状态筛选 (0下架 1在售 2已售)
+     */
+    private Integer status = 1;
+    
+    /**
+     * 最低成色等级(1-10)
+     */
+    private Integer minConditionLevel;
+    
+    /**
+     * 地区筛选
+     */
+    private String location;
+    
+    /**
+     * 卖家ID
+     */
+    private Long sellerId;
+}
+            </pre>
+            <p>请求示例：</p>
+            <pre>
+GET /product/list?pageNum=1&pageSize=10&categoryId=2&minPrice=1000&maxPrice=5000&sortField=price&sortOrder=asc
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>分页结果数据</td>
+                </tr>
+                <tr>
+                    <td>data.pageNum</td>
+                    <td>int</td>
+                    <td>当前页码</td>
+                </tr>
+                <tr>
+                    <td>data.pageSize</td>
+                    <td>int</td>
+                    <td>每页大小</td>
+                </tr>
+                <tr>
+                    <td>data.total</td>
+                    <td>long</td>
+                    <td>总记录数</td>
+                </tr>
+                <tr>
+                    <td>data.pages</td>
+                    <td>int</td>
+                    <td>总页数</td>
+                </tr>
+                <tr>
+                    <td>data.list</td>
+                    <td>array</td>
+                    <td>当前页商品列表</td>
+                </tr>
+                <tr>
+                    <td>data.hasPrevious</td>
+                    <td>boolean</td>
+                    <td>是否有上一页</td>
+                </tr>
+                <tr>
+                    <td>data.hasNext</td>
+                    <td>boolean</td>
+                    <td>是否有下一页</td>
+                </tr>
+            </table>
+            <p>商品列表项参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>productId</td>
+                    <td>long</td>
+                    <td>商品ID</td>
+                </tr>
+                <tr>
+                    <td>title</td>
+                    <td>string</td>
+                    <td>商品标题</td>
+                </tr>
+                <tr>
+                    <td>price</td>
+                    <td>decimal</td>
+                    <td>商品价格</td>
+                </tr>
+                <tr>
+                    <td>originalPrice</td>
+                    <td>decimal</td>
+                    <td>商品原价</td>
+                </tr>
+                <tr>
+                    <td>categoryId</td>
+                    <td>int</td>
+                    <td>分类ID</td>
+                </tr>
+                <tr>
+                    <td>categoryName</td>
+                    <td>string</td>
+                    <td>分类名称</td>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>long</td>
+                    <td>发布用户ID</td>
+                </tr>
+                <tr>
+                    <td>username</td>
+                    <td>string</td>
+                    <td>发布用户名</td>
+                </tr>
+                <tr>
+                    <td>conditionLevel</td>
+                    <td>int</td>
+                    <td>物品成色(1-10级)</td>
+                </tr>
+                <tr>
+                    <td>location</td>
+                    <td>string</td>
+                    <td>商品所在地</td>
+                </tr>
+                <tr>
+                    <td>viewCount</td>
+                    <td>int</td>
+                    <td>浏览次数</td>
+                </tr>
+                <tr>
+                    <td>createdTime</td>
+                    <td>datetime</td>
+                    <td>发布时间</td>
+                </tr>
+                <tr>
+                    <td>mainImageUrl</td>
+                    <td>string</td>
+                    <td>商品主图URL</td>
+                </tr>
+            </table>
+            <p>响应数据模型：</p>
+            <pre>
+// ProductPageVO.java
+public class ProductPageVO {
+    
+    /**
+     * 商品ID
+     */
+    private Long productId;
+    
+    /**
+     * 商品标题
+     */
+    private String title;
+    
+    /**
+     * 商品价格
+     */
+    private BigDecimal price;
+    
+    /**
+     * 物品原价
+     */
+    private BigDecimal originalPrice;
+    
+    /**
+     * 商品分类ID
+     */
+    private Integer categoryId;
+    
+    /**
+     * 商品分类名称
+     */
+    private String categoryName;
+    
+    /**
+     * 发布用户ID
+     */
+    private Long userId;
+    
+    /**
+     * 发布用户名
+     */
+    private String username;
+    
+    /**
+     * 物品成色(1-10级)
+     */
+    private Integer conditionLevel;
+    
+    /**
+     * 商品所在地
+     */
+    private String location;
+    
+    /**
+     * 浏览次数
+     */
+    private Integer viewCount;
+    
+    /**
+     * 发布时间
+     */
+    private LocalDateTime createdTime;
+    
+    /**
+     * 主图URL
+     */
+    private String mainImageUrl;
+}
+
+// PageResult.java
+public class PageResult<T> {
+    
+    /**
+     * 当前页码
+     */
+    private Integer pageNum;
+    
+    /**
+     * 每页大小
+     */
+    private Integer pageSize;
+    
+    /**
+     * 总记录数
+     */
+    private Long total;
+    
+    /**
+     * 总页数
+     */
+    private Integer pages;
+    
+    /**
+     * 当前页数据
+     */
+    private List<T> list;
+    
+    /**
+     * 是否有上一页
+     */
+    private Boolean hasPrevious;
+    
+    /**
+     * 是否有下一页
+     */
+    private Boolean hasNext;
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "pageNum": 1,
+        "pageSize": 10,
+        "total": 28,
+        "pages": 3,
+        "list": [
+            {
+                "productId": 1,
+                "title": "iPhone 12 Pro 128G 海蓝色",
+                "price": 4299.00,
+                "originalPrice": 6999.00,
+                "categoryId": 3,
+                "categoryName": "手机数码",
+                "userId": 5,
+                "username": "张三",
+                "conditionLevel": 9,
+                "location": "北京市海淀区",
+                "viewCount": 253,
+                "createdTime": "2023-06-01T10:30:00",
+                "mainImageUrl": "https://example.com/images/iphone12_1.jpg"
+            },
+            {
+                "productId": 2,
+                "title": "MacBook Pro 2021 M1芯片",
+                "price": 8999.00,
+                "originalPrice": 12999.00,
+                "categoryId": 3,
+                "categoryName": "手机数码",
+                "userId": 8,
+                "username": "李四",
+                "conditionLevel": 8,
+                "location": "上海市浦东新区",
+                "viewCount": 187,
+                "createdTime": "2023-06-02T14:20:00",
+                "mainImageUrl": "https://example.com/images/macbook_1.jpg"
+            }
+            // ... 更多商品数据
+        ],
+        "hasPrevious": false,
+        "hasNext": true
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>分页查询默认返回在售(status=1)的商品</li>
+                <li>如果不指定排序规则，默认按发布时间降序排列（最新发布的商品排在前面）</li>
+                <li>每页最多返回50条数据，超过限制会自动调整为50</li>
+                <li>categoryId对应的分类名称会自动关联查询并返回</li>
+                <li>商品主图(is_main=1)会自动关联查询并返回</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
             <h3>添加商品</h3>
             <p>请求路径：/product/add</p>
             <p>请求方法：POST</p>
@@ -265,38 +894,6 @@
         "conditionLevel": 9,
         "status": 1,
         "location": "北京市"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>上传商品图片</h3>
-            <p>请求路径：/product/image/upload</p>
-            <p>请求方法：POST</p>
-            <p>请求类型：multipart/form-data</p>
-            <p>请求参数：</p>
-            <pre>
-productId: 1 (商品ID，必填)
-isMain: 1 (是否为主图，0-否，1-是，可选，默认0)
-sortOrder: 0 (图片排序，可选，默认0)
-imageFile: [文件] (图片文件，必填，支持jpg、jpeg、png、gif格式)
-            </pre>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "imageId": 1,
-        "productId": 1,
-        "imageUrl": "http://localhost:8080/images/2e45f7a1-b8c2-4d3a-9e1c-7b164aa95f23.jpg",
-        "isMain": 1,
-        "sortOrder": 0
     },
     "message": "success"
 }
@@ -352,6 +949,124 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
         "title": "iPhone 12 Pro",
         "price": 4999.00,
         "status": 1
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>删除商品</h3>
+            <p>请求路径：/product/delete/{productId}</p>
+            <p>请求方法：DELETE</p>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "商品删除成功",
+    "message": "success"
+}
+            </pre>
+        </div>
+    </div>
+
+    <!-- 商品收藏模块 -->
+    <div class="api-section">
+        <h2>商品收藏模块</h2>
+
+        <div class="api-item">
+            <h3>收藏商品</h3>
+            <p>请求路径：/product/favorite/add</p>
+            <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "productId": 1,
+    "userId": 1
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "favoriteId": 1,
+        "productId": 1,
+        "userId": 1,
+        "createdTime": "2025-04-14 10:00:00"
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>取消收藏商品</h3>
+            <p>请求路径：/product/favorite/{productId}</p>
+            <p>请求方法：DELETE</p>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "取消收藏成功",
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>获取收藏列表</h3>
+            <p>请求路径：/product/favorite/list</p>
+            <p>请求方法：GET</p>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": [
+        {
+            "favoriteId": 1,
+            "productId": 1,
+            "productTitle": "iPhone 12",
+            "productPrice": 3999.00,
+            "createdTime": "2025-04-14 10:00:00"
+        }
+    ],
+    "message": "success"
+}
+            </pre>
+        </div>
+    </div>
+
+    <!-- 商品图片模块 -->
+    <div class="api-section">
+        <h2>商品图片模块</h2>
+
+        <div class="api-item">
+            <h3>上传商品图片</h3>
+            <p>请求路径：/product/image/upload</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：multipart/form-data</p>
+            <p>请求参数：</p>
+            <pre>
+productId: 1 (商品ID，必填)
+isMain: 1 (是否为主图，0-否，1-是，可选，默认0)
+sortOrder: 0 (图片排序，可选，默认0)
+imageFile: [文件] (图片文件，必填，支持jpg、jpeg、png、gif格式)
+            </pre>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "imageId": 1,
+        "productId": 1,
+        "imageUrl": "http://localhost:8080/images/2e45f7a1-b8c2-4d3a-9e1c-7b164aa95f23.jpg",
+        "isMain": 1,
+        "sortOrder": 0
     },
     "message": "success"
 }
@@ -453,20 +1168,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
             <h3>删除商品图片</h3>
             <p>请求路径：/product/image/{productId}/{imageId}</p>
             <p>请求方法：DELETE</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": "图片删除成功",
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取商品图片列表</h3>
-            <p>请求路径：/product/image/list/{productId}</p>
-            <p>请求方法：GET</p>
             <p>请求头：</p>
             <pre>
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
@@ -475,24 +1176,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
             <pre>
 {
     "code": 0,
-    "data": [
-        {
-            "imageId": 1,
-            "productId": 1,
-            "imageUrl": "http://localhost:8080/images/2e45f7a1-b8c2-4d3a-9e1c-7b164aa95f23.jpg",
-            "isMain": 1,
-            "sortOrder": 0,
-            "createdTime": "2025-04-14 10:00:00"
-        },
-        {
-            "imageId": 2,
-            "productId": 1,
-            "imageUrl": "http://localhost:8080/images/3f56e8b2-c9d3-4e2b-8f2d-9a275bb86f34.jpg",
-            "isMain": 0,
-            "sortOrder": 1,
-            "createdTime": "2025-04-14 10:00:00"
-        }
-    ],
+    "data": "图片删除成功",
     "message": "success"
 }
             </pre>
@@ -897,7 +1581,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 }
             </pre>
         </div>
-        
+
         <div class="api-item">
             <h3>订单评价</h3>
             <p>请求路径：/order/review/add</p>
@@ -941,8 +1625,1572 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 }
             </pre>
         </div>
+
+        <div class="api-item">
+            <h3>发送订单消息（催促发货）</h3>
+            <p>请求路径：/order/message/send</p>
+            <p>请求方法：POST</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "orderId": 1,
+    "productId": 3,
+    "senderId": 1,
+    "receiverId": 2,
+    "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。"
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "messageId": 1,
+        "orderId": 1,
+        "orderNo": "202504141528120123456",
+        "productId": 3,
+        "productTitle": "iPhone 12",
+        "senderId": 1,
+        "senderName": "张三",
+        "receiverId": 2,
+        "receiverName": "李四",
+        "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。",
+        "isRead": 0,
+        "createdTime": "2025-04-17 09:30:45"
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>获取订单消息列表</h3>
+            <p>请求路径：/order/message/list/{orderId}</p>
+            <p>请求方法：GET</p>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": [
+        {
+            "messageId": 1,
+            "orderId": 1,
+            "orderNo": "202504141528120123456",
+            "productId": 3,
+            "productTitle": "iPhone 12",
+            "senderId": 1,
+            "senderName": "张三",
+            "receiverId": 2,
+            "receiverName": "李四",
+            "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。",
+            "isRead": 0,
+            "createdTime": "2025-04-17 09:30:45"
+        }
+    ],
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>获取接收的消息列表</h3>
+            <p>请求路径：/order/message/received/{userId}</p>
+            <p>请求方法：GET</p>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": [
+        {
+            "messageId": 1,
+            "orderId": 1,
+            "orderNo": "202504141528120123456",
+            "productId": 3,
+            "productTitle": "iPhone 12",
+            "senderId": 1,
+            "senderName": "张三",
+            "receiverId": 2,
+            "receiverName": "李四",
+            "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。",
+            "isRead": 0,
+            "createdTime": "2025-04-17 09:30:45"
+        },
+        {
+            "messageId": 3,
+            "orderId": 2,
+            "orderNo": "202504151028330123789",
+            "productId": 5,
+            "productTitle": "MacBook Pro",
+            "senderId": 3,
+            "senderName": "王五",
+            "receiverId": 2,
+            "receiverName": "李四",
+            "content": "我刚刚确认了订单，可以发货了吗？",
+            "isRead": 1,
+            "createdTime": "2025-04-16 10:35:22"
+        }
+    ],
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>标记消息为已读</h3>
+            <p>请求路径：/order/message/read/{messageId}</p>
+            <p>请求方法：PUT</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": true,
+    "message": "success"
+}
+            </pre>
+        </div>
         
     </div>
 
+    <!-- 文件上传模块 -->
+    <div class="api-section">
+        <h2>文件上传模块</h2>
+
+        <div class="api-item">
+            <h3>通用文件上传</h3>
+            <p>请求路径：/file/upload</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：multipart/form-data</p>
+            <p>请求参数：</p>
+            <pre>
+file: 要上传的文件（form-data类型）
+            </pre>
+            <p>支持的文件类型：jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, zip, rar</p>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "fileName": "example.jpg",
+        "fileUrl": "http://localhost:8080/files/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6.jpg",
+        "fileSize": "123456",
+        "fileType": "image/jpeg"
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+    </div>
+
+    <!-- 商品支付模块 -->
+    <div class="api-section">
+        <h2>商品支付模块</h2>
+
+        <div class="api-item">
+            <h3>创建钱包账户</h3>
+            <p>接口描述：为新用户创建钱包账户，初始化余额和冻结余额为0</p>
+            <p>请求路径：/api/wallet/create</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：application/json</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "userId": 1
+}
+            </pre>
+            <p>请求数据模型：</p>
+            <pre>
+// CreateWalletDTO.java
+public class CreateWalletDTO {
+    
+    /**
+     * 用户ID
+     */
+    @NotNull(message = "用户ID不能为空")
+    private Long userId;
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>long</td>
+                    <td>钱包账户ID（account_id）</td>
+                </tr>
+            </table>
+            <p>响应数据模型：</p>
+            <pre>
+// BaseResponse.java
+public class BaseResponse&lt;T&gt; {
+    private int code;
+    private T data;
+    private String message;
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": 123,
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>50001</td>
+                    <td>操作失败（如创建钱包失败、用户已有钱包账户等）</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于为新用户初始化钱包账户</li>
+                <li>同一用户ID只能创建一个钱包账户，重复创建会返回错误</li>
+                <li>钱包账户创建后，初始余额和冻结余额都为0</li>
+                <li>需要用户登录后访问此接口</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>查询钱包账户信息</h3>
+            <p>接口描述：根据用户ID查询其钱包账户的详细信息，包括余额、冻结余额等</p>
+            <p>请求路径：/api/wallet/info</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>是</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+            </table>
+            <p>请求示例：</p>
+            <pre>
+GET /api/wallet/info?userId=1
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>钱包账户信息对象</td>
+                </tr>
+                <tr>
+                    <td>data.accountId</td>
+                    <td>long</td>
+                    <td>钱包账户ID</td>
+                </tr>
+                <tr>
+                    <td>data.userId</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+                <tr>
+                    <td>data.balance</td>
+                    <td>decimal</td>
+                    <td>账户余额</td>
+                </tr>
+                <tr>
+                    <td>data.frozenBalance</td>
+                    <td>decimal</td>
+                    <td>冻结余额</td>
+                </tr>
+                <tr>
+                    <td>data.lastUpdateTime</td>
+                    <td>datetime</td>
+                    <td>最后更新时间</td>
+                </tr>
+            </table>
+            <p>响应数据模型：</p>
+            <pre>
+// WalletAccount.java
+public class WalletAccount {
+    
+    /**
+     * 钱包账户ID（唯一主键）
+     */
+    private Long accountId;
+
+    /**
+     * 所属用户ID，关联user表的user_id
+     */
+    private Long userId;
+
+    /**
+     * 钱包余额
+     */
+    private BigDecimal balance;
+
+    /**
+     * 冻结余额，如在交易处理中被冻结的金额
+     */
+    private BigDecimal frozenBalance;
+
+    /**
+     * 最后更新时间
+     */
+    private LocalDateTime lastUpdateTime;
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "accountId": 123,
+        "userId": 1,
+        "balance": 1500.00,
+        "frozenBalance": 200.00,
+        "lastUpdateTime": "2023-06-15T10:30:00"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>钱包账户不存在</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于查询用户钱包账户详细信息</li>
+                <li>需要用户登录后访问此接口</li>
+                <li>如果用户没有创建钱包账户，将返回钱包账户不存在的错误</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>更新钱包账户余额</h3>
+            <p>接口描述：在进行交易（如充值、消费、退款等）后，更新钱包账户的余额和冻结余额，并记录最后更新时间</p>
+            <p>请求路径：/api/wallet/update</p>
+            <p>请求方法：PUT</p>
+            <p>请求类型：application/json</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "accountId": 123,
+    "balance": 2000.00,
+    "frozenBalance": 300.00
+}
+            </pre>
+            <p>请求数据模型：</p>
+            <pre>
+// UpdateWalletDTO.java
+public class UpdateWalletDTO {
+    
+    /**
+     * 钱包账户ID
+     */
+    @NotNull(message = "账户ID不能为空")
+    private Long accountId;
+
+    /**
+     * 更新后的余额
+     */
+    private BigDecimal balance;
+
+    /**
+     * 更新后的冻结余额
+     */
+    private BigDecimal frozenBalance;
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>更新后的钱包账户信息对象</td>
+                </tr>
+                <tr>
+                    <td>data.accountId</td>
+                    <td>long</td>
+                    <td>钱包账户ID</td>
+                </tr>
+                <tr>
+                    <td>data.userId</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+                <tr>
+                    <td>data.balance</td>
+                    <td>decimal</td>
+                    <td>更新后的账户余额</td>
+                </tr>
+                <tr>
+                    <td>data.frozenBalance</td>
+                    <td>decimal</td>
+                    <td>更新后的冻结余额</td>
+                </tr>
+                <tr>
+                    <td>data.lastUpdateTime</td>
+                    <td>datetime</td>
+                    <td>最后更新时间</td>
+                </tr>
+            </table>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "accountId": 123,
+        "userId": 1,
+        "balance": 2000.00,
+        "frozenBalance": 300.00,
+        "lastUpdateTime": "2023-06-15T14:30:45"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>钱包账户不存在</td>
+                </tr>
+                <tr>
+                    <td>50001</td>
+                    <td>操作失败</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于更新钱包账户的余额和冻结余额</li>
+                <li>balance和frozenBalance参数不是必填的，如果不提供则不会更新对应字段</li>
+                <li>每次更新都会自动记录最后更新时间</li>
+                <li>需要用户登录并且有权限操作该钱包账户</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>冻结/解冻钱包账户余额</h3>
+            <p>接口描述：根据业务需求，对钱包账户的部分余额进行冻结或解冻操作，并更新相应的frozen_balance字段和last_update_time</p>
+            <p>请求路径：/api/wallet/freeze</p>
+            <p>请求方法：PUT</p>
+            <p>请求类型：application/json</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "accountId": 123,
+    "operationType": 1,
+    "amount": 500.00
+}
+            </pre>
+            <p>请求数据模型：</p>
+            <pre>
+// FreezeWalletDTO.java
+public class FreezeWalletDTO {
+    
+    /**
+     * 钱包账户ID
+     */
+    @NotNull(message = "账户ID不能为空")
+    private Long accountId;
+
+    /**
+     * 操作类型（1-冻结，2-解冻）
+     */
+    @NotNull(message = "操作类型不能为空")
+    private Integer operationType;
+
+    /**
+     * 要冻结或解冻的金额
+     */
+    @NotNull(message = "金额不能为空")
+    @Min(value = 0, message = "金额必须大于等于0")
+    private BigDecimal amount;
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>更新后的钱包账户信息对象</td>
+                </tr>
+                <tr>
+                    <td>data.accountId</td>
+                    <td>long</td>
+                    <td>钱包账户ID</td>
+                </tr>
+                <tr>
+                    <td>data.userId</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+                <tr>
+                    <td>data.balance</td>
+                    <td>decimal</td>
+                    <td>更新后的账户余额</td>
+                </tr>
+                <tr>
+                    <td>data.frozenBalance</td>
+                    <td>decimal</td>
+                    <td>更新后的冻结余额</td>
+                </tr>
+                <tr>
+                    <td>data.lastUpdateTime</td>
+                    <td>datetime</td>
+                    <td>最后更新时间</td>
+                </tr>
+            </table>
+            <p>响应示例（冻结操作）：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "accountId": 123,
+        "userId": 1,
+        "balance": 1500.00,
+        "frozenBalance": 500.00,
+        "lastUpdateTime": "2023-06-15T16:45:32"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>响应示例（解冻操作）：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "accountId": 123,
+        "userId": 1,
+        "balance": 2000.00,
+        "frozenBalance": 0.00,
+        "lastUpdateTime": "2023-06-15T16:50:15"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>钱包账户不存在</td>
+                </tr>
+                <tr>
+                    <td>50001</td>
+                    <td>操作失败（如余额不足、冻结余额不足等）</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于对钱包账户的余额进行冻结或解冻操作</li>
+                <li>操作类型(operationType)：1表示冻结操作，2表示解冻操作</li>
+                <li>冻结操作会将指定金额从可用余额(balance)转移到冻结余额(frozenBalance)</li>
+                <li>解冻操作会将指定金额从冻结余额(frozenBalance)转移到可用余额(balance)</li>
+                <li>操作金额必须大于0，且不能超过相应余额</li>
+                <li>每次操作都会自动更新最后更新时间</li>
+                <li>需要用户登录并且有权限操作该钱包账户</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>创建钱包交易记录</h3>
+            <p>接口描述：在每次钱包发生交易（如充值、消费、退款等）时，创建一条新的交易记录</p>
+            <p>请求路径：/api/wallet/transaction/create</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：application/json</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "accountId": 123,
+    "transactionType": 1,
+    "transactionAmount": 1000.00,
+    "beforeBalance": 500.00,
+    "afterBalance": 1500.00,
+    "remark": "用户充值"
+}
+            </pre>
+            <p>请求数据模型：</p>
+            <pre>
+// CreateTransactionDTO.java
+public class CreateTransactionDTO {
+    
+    /**
+     * 钱包账户ID
+     */
+    @NotNull(message = "账户ID不能为空")
+    private Long accountId;
+
+    /**
+     * 交易类型(1充值 2消费 3退款 4其他)
+     */
+    @NotNull(message = "交易类型不能为空")
+    private Integer transactionType;
+
+    /**
+     * 交易金额
+     */
+    @NotNull(message = "交易金额不能为空")
+    @Min(value = 0, message = "交易金额必须大于等于0")
+    private BigDecimal transactionAmount;
+
+    /**
+     * 交易前余额
+     */
+    @NotNull(message = "交易前余额不能为空")
+    private BigDecimal beforeBalance;
+
+    /**
+     * 交易后余额
+     */
+    @NotNull(message = "交易后余额不能为空")
+    private BigDecimal afterBalance;
+
+    /**
+     * 交易备注
+     */
+    private String remark;
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>long</td>
+                    <td>交易记录ID（transaction_id）</td>
+                </tr>
+            </table>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": 456,
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>钱包账户不存在</td>
+                </tr>
+                <tr>
+                    <td>50001</td>
+                    <td>操作失败</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于记录每次钱包账户的交易操作</li>
+                <li>交易类型说明：1-充值，2-消费，3-退款，4-其他</li>
+                <li>交易记录创建后会自动记录交易时间</li>
+                <li>需要用户登录并且有权限操作该钱包账户</li>
+                <li>此接口通常与钱包余额更新接口一起使用，先更新余额，再创建交易记录</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>查询钱包交易记录列表</h3>
+            <p>接口描述：根据钱包账户ID查询该账户的交易记录列表，可根据交易时间范围等条件进行筛选</p>
+            <p>请求路径：/api/wallet/transaction/list</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>accountId</td>
+                    <td>是</td>
+                    <td>long</td>
+                    <td>钱包账户ID</td>
+                </tr>
+                <tr>
+                    <td>startTime</td>
+                    <td>否</td>
+                    <td>datetime</td>
+                    <td>查询起始时间，格式：yyyy-MM-dd HH:mm:ss</td>
+                </tr>
+                <tr>
+                    <td>endTime</td>
+                    <td>否</td>
+                    <td>datetime</td>
+                    <td>查询结束时间，格式：yyyy-MM-dd HH:mm:ss</td>
+                </tr>
+                <tr>
+                    <td>transactionType</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>交易类型(1充值 2消费 3退款 4其他)</td>
+                </tr>
+                <tr>
+                    <td>pageNum</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>当前页码，默认1</td>
+                </tr>
+                <tr>
+                    <td>pageSize</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>每页记录数，默认10，最大100</td>
+                </tr>
+            </table>
+            <p>请求示例：</p>
+            <pre>
+GET /api/wallet/transaction/list?accountId=123&startTime=2023-01-01 00:00:00&endTime=2023-12-31 23:59:59&transactionType=1&pageNum=1&pageSize=10
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>分页结果对象</td>
+                </tr>
+                <tr>
+                    <td>data.pageNum</td>
+                    <td>long</td>
+                    <td>当前页码</td>
+                </tr>
+                <tr>
+                    <td>data.pageSize</td>
+                    <td>long</td>
+                    <td>每页记录数</td>
+                </tr>
+                <tr>
+                    <td>data.total</td>
+                    <td>long</td>
+                    <td>总记录数</td>
+                </tr>
+                <tr>
+                    <td>data.pages</td>
+                    <td>long</td>
+                    <td>总页数</td>
+                </tr>
+                <tr>
+                    <td>data.hasPrevious</td>
+                    <td>boolean</td>
+                    <td>是否有上一页</td>
+                </tr>
+                <tr>
+                    <td>data.hasNext</td>
+                    <td>boolean</td>
+                    <td>是否有下一页</td>
+                </tr>
+                <tr>
+                    <td>data.list</td>
+                    <td>array</td>
+                    <td>交易记录列表</td>
+                </tr>
+            </table>
+            <p>交易记录对象说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>transactionId</td>
+                    <td>long</td>
+                    <td>交易记录ID</td>
+                </tr>
+                <tr>
+                    <td>accountId</td>
+                    <td>long</td>
+                    <td>钱包账户ID</td>
+                </tr>
+                <tr>
+                    <td>transactionType</td>
+                    <td>int</td>
+                    <td>交易类型(1充值 2消费 3退款 4其他)</td>
+                </tr>
+                <tr>
+                    <td>transactionAmount</td>
+                    <td>decimal</td>
+                    <td>交易金额</td>
+                </tr>
+                <tr>
+                    <td>beforeBalance</td>
+                    <td>decimal</td>
+                    <td>交易前余额</td>
+                </tr>
+                <tr>
+                    <td>afterBalance</td>
+                    <td>decimal</td>
+                    <td>交易后余额</td>
+                </tr>
+                <tr>
+                    <td>transactionTime</td>
+                    <td>datetime</td>
+                    <td>交易时间</td>
+                </tr>
+                <tr>
+                    <td>remark</td>
+                    <td>string</td>
+                    <td>交易备注</td>
+                </tr>
+            </table>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "pageNum": 1,
+        "pageSize": 10,
+        "total": 2,
+        "pages": 1,
+        "list": [
+            {
+                "transactionId": 2,
+                "accountId": 123,
+                "transactionType": 1,
+                "transactionAmount": 1000.00,
+                "beforeBalance": 2000.00,
+                "afterBalance": 3000.00,
+                "transactionTime": "2023-06-15T16:30:45",
+                "remark": "用户充值"
+            },
+            {
+                "transactionId": 1,
+                "accountId": 123,
+                "transactionType": 1,
+                "transactionAmount": 2000.00,
+                "beforeBalance": 0.00,
+                "afterBalance": 2000.00,
+                "transactionTime": "2023-06-10T10:15:30",
+                "remark": "初始充值"
+            }
+        ],
+        "hasPrevious": false,
+        "hasNext": false
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>钱包账户不存在</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于查询钱包账户的交易记录</li>
+                <li>结果按交易时间降序排序，最新的交易记录排在前面</li>
+                <li>可选择性地根据交易时间范围、交易类型进行筛选</li>
+                <li>支持分页查询，控制返回的数据量</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>设置支付密码</h3>
+            <p>接口描述：用户首次设置或修改自己的钱包支付密码。</p>
+            <p>请求路径：/api/wallet/payment-password/set</p>
+            <p>请求方法：POST</p>
+            <p>请求头：</p>
+            <pre>
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>是</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+                <tr>
+                    <td>paymentPassword</td>
+                    <td>是</td>
+                    <td>string</td>
+                    <td>要设置的支付密码，长度为6-20位</td>
+                </tr>
+                <tr>
+                    <td>oldPaymentPassword</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>原支付密码，修改密码时必填</td>
+                </tr>
+            </table>
+            <p>请求示例(首次设置)：</p>
+            <pre>
+{
+    "userId": 123,
+    "paymentPassword": "123456"
+}
+            </pre>
+            <p>请求示例(修改密码)：</p>
+            <pre>
+{
+    "userId": 123,
+    "paymentPassword": "654321",
+    "oldPaymentPassword": "123456"
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>string</td>
+                    <td>操作结果提示信息</td>
+                </tr>
+            </table>
+            <p>响应示例(首次设置)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "支付密码设置成功",
+    "message": "success"
+}
+            </pre>
+            <p>响应示例(修改密码)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "支付密码修改成功",
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>用户不存在</td>
+                </tr>
+                <tr>
+                    <td>40001</td>
+                    <td>原支付密码不正确</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>支付密码长度必须在6-20位之间</li>
+                <li>首次设置支付密码时，不需要传入原支付密码参数</li>
+                <li>修改支付密码时，必须提供正确的原支付密码进行验证</li>
+                <li>为安全起见，建议前端对支付密码进行加密后再传输</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>验证支付密码</h3>
+            <p>接口描述：在进行涉及钱包资金变动的操作（如支付、提现等）时，验证用户输入的支付密码是否正确。</p>
+            <p>请求路径：/api/wallet/payment-password/verify</p>
+            <p>请求方法：POST</p>
+            <p>请求头：</p>
+            <pre>
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>是</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+                <tr>
+                    <td>paymentPassword</td>
+                    <td>是</td>
+                    <td>string</td>
+                    <td>待验证的支付密码</td>
+                </tr>
+            </table>
+            <p>请求示例：</p>
+            <pre>
+{
+    "userId": 123,
+    "paymentPassword": "123456"
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>boolean</td>
+                    <td>验证结果，true表示验证通过，false表示验证失败</td>
+                </tr>
+            </table>
+            <p>响应示例(密码正确)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": true,
+    "message": "success"
+}
+            </pre>
+            <p>响应示例(密码错误)：</p>
+            <pre>
+{
+    "code": 40000,
+    "data": false,
+    "message": "支付密码不正确"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误，如密码错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>用户未设置支付密码</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于在敏感操作（如支付、提现）前验证用户支付密码</li>
+                <li>验证通过时返回true，验证失败（如密码错误）时返回false</li>
+                <li>用户必须先设置支付密码才能使用此接口，否则返回404错误</li>
+                <li>为安全起见，建议前端对支付密码进行加密后再传输</li>
+            </ol>
+        </div>
+        
+        <div class="api-item">
+            <h3>发送重置支付密码验证码</h3>
+            <p>接口描述：用户忘记支付密码时，获取重置支付密码的验证码，发送到用户绑定的手机或邮箱。</p>
+            <p>请求路径：/api/wallet/payment-password/send-reset-code</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>是</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+            </table>
+            <p>请求示例：</p>
+            <pre>
+GET /api/wallet/payment-password/send-reset-code?userId=123
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>string</td>
+                    <td>返回结果信息</td>
+                </tr>
+            </table>
+            <p>响应示例(成功)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "验证码发送成功，请查收手机或邮箱",
+    "message": "success"
+}
+            </pre>
+            <p>响应示例(用户未绑定联系方式)：</p>
+            <pre>
+{
+    "code": 40000,
+    "message": "用户未设置手机号或邮箱，无法发送验证码"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>用户不存在</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>验证码将发送到用户绑定的手机号或邮箱</li>
+                <li>验证码有效期为5分钟</li>
+                <li>用户必须先绑定手机号或邮箱才能使用此功能</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>重置支付密码</h3>
+            <p>接口描述：当用户忘记支付密码时，通过验证码验证身份，重置支付密码。</p>
+            <p>请求路径：/api/wallet/payment-password/reset</p>
+            <p>请求方法：POST</p>
+            <p>请求头：</p>
+            <pre>
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>是</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+                <tr>
+                    <td>newPaymentPassword</td>
+                    <td>是</td>
+                    <td>string</td>
+                    <td>新支付密码，长度6-20位</td>
+                </tr>
+                <tr>
+                    <td>verificationCode</td>
+                    <td>是</td>
+                    <td>string</td>
+                    <td>验证码，通过发送验证码接口获取</td>
+                </tr>
+            </table>
+            <p>请求示例：</p>
+            <pre>
+{
+    "userId": 123,
+    "newPaymentPassword": "654321",
+    "verificationCode": "123456"
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>string</td>
+                    <td>返回结果信息</td>
+                </tr>
+            </table>
+            <p>响应示例(成功)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "支付密码重置成功",
+    "message": "success"
+}
+            </pre>
+            <p>响应示例(验证码错误)：</p>
+            <pre>
+{
+    "code": 40000,
+    "message": "验证码错误或已过期"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误，如验证码错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40400</td>
+                    <td>用户不存在</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口用于用户忘记支付密码时重置密码</li>
+                <li>需要先调用发送验证码接口获取验证码</li>
+                <li>验证码有效期为5分钟，仅能使用一次</li>
+                <li>新密码必须符合6-20位的长度要求</li>
+                <li>为安全起见，建议前端对新密码进行加密后再传输</li>
+            </ol>
+        </div>
+    </div>
+
+// ... existing code ...
 </body>
 </html>

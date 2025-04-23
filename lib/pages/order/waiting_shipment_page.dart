@@ -237,11 +237,14 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '订单号: ${order.orderNo}',
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
+                Flexible(
+                  child: Text(
+                    '订单号: ${order.orderNo}',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Container(
@@ -302,33 +305,41 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '¥${order.paymentAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange,
+                          Flexible(
+                            flex: 1,
+                            child: Text(
+                              '¥${order.paymentAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '下单时间: ${order.createdTime.split(' ')[0]}',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
+                          Flexible(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '下单时间: ${order.createdTime.split(' ')[0]}',
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              // 移除对不存在的 paymentTime 属性的引用
-                              Text(
-                                '订单状态: 已付款',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
+                                // 移除对不存在的 paymentTime 属性的引用
+                                Text(
+                                  '订单状态: 已付款',
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -343,7 +354,8 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
             // 收件信息
             if (order.address != null) ...[
               Container(
-                padding: const EdgeInsets.all(8),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
@@ -351,25 +363,34 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    // 收货人和电话信息
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         const Icon(Icons.person, size: 16, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(
-                          '收货人: ${order.address!.receiverName}',
-                          style: const TextStyle(fontSize: 13),
+                        Flexible(
+                          child: Text(
+                            '收货人: ${order.address!.receiverName}',
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        const SizedBox(width: 16),
                         const Icon(Icons.phone, size: 16, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(
-                          order.address!.receiverPhone,
-                          style: const TextStyle(fontSize: 13),
+                        Flexible(
+                          child: Text(
+                            order.address!.receiverPhone,
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
+                    // 地址信息
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.location_on,
                             size: 16, color: Colors.grey),
@@ -394,9 +415,12 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '商品金额',
-                  style: TextStyle(color: Colors.grey[600]),
+                Flexible(
+                  child: Text(
+                    '商品金额',
+                    style: TextStyle(color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Text('¥${order.orderAmount.toStringAsFixed(2)}'),
               ],
@@ -407,9 +431,12 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '运费',
-                    style: TextStyle(color: Colors.grey[600]),
+                  Flexible(
+                    child: Text(
+                      '运费',
+                      style: TextStyle(color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   Text('¥${order.deliveryFee!.toStringAsFixed(2)}'),
                 ],
@@ -420,10 +447,13 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '实付款',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                const Flexible(
+                  child: Text(
+                    '实付款',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
@@ -444,16 +474,23 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '备注: ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                  const Flexible(
+                    flex: 1,
+                    child: Text(
+                      '备注: ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Expanded(
+                    flex: 5,
                     child: Text(
                       order.remark!,
                       style: const TextStyle(fontSize: 13),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -462,10 +499,11 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
             ],
 
             // 催促发货按钮
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton.icon(
+            Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                width: 120,
+                child: ElevatedButton.icon(
                   onPressed: () => _sendReminder(order),
                   icon: const Icon(Icons.notifications_active, size: 16),
                   label: const Text('催一催'),
@@ -474,7 +512,7 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
                     foregroundColor: Colors.white,
                   ),
                 ),
-              ],
+              ),
             ),
           ],
         ),

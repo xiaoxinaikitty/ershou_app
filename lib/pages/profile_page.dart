@@ -10,6 +10,7 @@ import 'order/waiting_shipment_page.dart'; // 导入待发货页面
 import 'order/order_receiving_page.dart'; // 导入待收货页面
 import 'auth/login_page.dart'; // 导入登录页面
 import 'my_posts_page.dart'; // 导入我的发布页面
+import 'wallet_page.dart'; // 导入钱包页面
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -574,6 +575,13 @@ class _ProfilePageState extends State<ProfilePage> {
             context,
             MaterialPageRoute(
               builder: (context) => const MyPostsPage(),
+            ),
+          );
+        } else if (title == '我的钱包') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const WalletPage(),
             ),
           );
         } else {
