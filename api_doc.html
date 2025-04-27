@@ -91,6 +91,79 @@
         </div>
 
         <div class="api-item">
+            <h3>发送验证码</h3>
+            <p>请求路径：/verification/code/send</p>
+            <p>请求方法：POST</p>
+            <p>接口说明：接收用户输入的手机号码，生成并存储验证码到验证码记录表中，并将验证码发送给用户指定的手机号码</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "phoneNumber": "13800138000"
+}
+            </pre>
+            <p>成功响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "验证码发送成功",
+    "message": "success"
+}
+            </pre>
+            <p>失败响应示例：</p>
+            <pre>
+{
+    "code": 40000,
+    "message": "手机号格式不正确",
+    "data": null
+}
+            </pre>
+            <pre>
+{
+    "code": 50001,
+    "message": "验证码发送失败，请稍后重试",
+    "data": null
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>验证码登录</h3>
+            <p>请求路径：/verification/login</p>
+            <p>请求方法：POST</p>
+            <p>接口说明：使用手机号和验证码进行登录，验证成功后返回JWT令牌</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "phoneNumber": "13800138000",
+    "verificationCode": "123456"
+}
+            </pre>
+            <p>成功响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "eyJhbGciOiJIUzI1NiJ9...",
+    "message": "success"
+}
+            </pre>
+            <p>失败响应示例：</p>
+            <pre>
+{
+    "code": 40000,
+    "message": "验证码错误",
+    "data": null
+}
+            </pre>
+            <pre>
+{
+    "code": 40000,
+    "message": "验证码已过期，请重新获取",
+    "data": null
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
             <h3>管理员登录</h3>
             <p>请求路径：/user/admin</p>
             <p>请求方法：POST</p>
@@ -235,164 +308,9 @@
         <h2>商品模块</h2>
 
         <div class="api-item">
-            <h3>添加发布商品位置</h3>
-            <p>接口描述：添加发布商品时选择的位置信息(省市区)，插入到数据库中，并返回插入记录的ID</p>
-            <p>请求路径：/product/location/add</p>
-            <p>请求方法：POST</p>
-            <p>请求类型：application/json</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "province": "广东省",
-    "city": "深圳市",
-    "district": "南山区"
-}
-            </pre>
-            <p>请求数据模型：</p>
-            <pre>
-// ReleaseLocationDao.java
-public class ReleaseLocationDao {
-    
-    /**
-     * 省份名称
-     */
-    @NotBlank(message = "省份不能为空")
-    private String province;
-    
-    /**
-     * 城市名称
-     */
-    @NotBlank(message = "城市不能为空")
-    private String city;
-    
-    /**
-     * 区/县名称
-     */
-    @NotBlank(message = "区/县不能为空")
-    private String district;
-}
-            </pre>
-            <p>响应参数说明：</p>
-            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <th>参数名</th>
-                    <th>类型</th>
-                    <th>说明</th>
-                </tr>
-                <tr>
-                    <td>code</td>
-                    <td>int</td>
-                    <td>状态码，0表示成功</td>
-                </tr>
-                <tr>
-                    <td>message</td>
-                    <td>string</td>
-                    <td>提示信息</td>
-                </tr>
-                <tr>
-                    <td>data</td>
-                    <td>object</td>
-                    <td>返回数据</td>
-                </tr>
-                <tr>
-                    <td>data.id</td>
-                    <td>int</td>
-                    <td>位置记录ID</td>
-                </tr>
-                <tr>
-                    <td>data.province</td>
-                    <td>string</td>
-                    <td>省份名称</td>
-                </tr>
-                <tr>
-                    <td>data.city</td>
-                    <td>string</td>
-                    <td>城市名称</td>
-                </tr>
-                <tr>
-                    <td>data.district</td>
-                    <td>string</td>
-                    <td>区/县名称</td>
-                </tr>
-            </table>
-            <p>响应数据模型：</p>
-            <pre>
-// ReleaseLocationVO.java
-public class ReleaseLocationVO {
-    
-    /**
-     * 位置记录ID
-     */
-    private Integer id;
-    
-    /**
-     * 省份名称
-     */
-    private String province;
-    
-    /**
-     * 城市名称
-     */
-    private String city;
-    
-    /**
-     * 区/县名称
-     */
-    private String district;
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "id": 1,
-        "province": "广东省",
-        "city": "深圳市",
-        "district": "南山区"
-    },
-    "message": "success"
-}
-            </pre>
-            <p>错误码说明：</p>
-            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <th>错误码</th>
-                    <th>说明</th>
-                </tr>
-                <tr>
-                    <td>0</td>
-                    <td>成功</td>
-                </tr>
-                <tr>
-                    <td>40000</td>
-                    <td>请求参数错误</td>
-                </tr>
-                <tr>
-                    <td>40100</td>
-                    <td>未授权</td>
-                </tr>
-                <tr>
-                    <td>50000</td>
-                    <td>系统内部错误</td>
-                </tr>
-            </table>
-            <p>备注：</p>
-            <ol>
-                <li>需要用户登录后访问此接口</li>
-                <li>此接口适用于发布商品时添加商品所在位置信息</li>
-                <li>返回的位置记录ID可用于商品表的location字段</li>
-            </ol>
-        </div>
-
-        <div class="api-item">
-            <h3>分页查询商品列表</h3>
-            <p>接口描述：分页获取商品列表，支持多种筛选条件和排序方式</p>
-            <p>请求路径：/product/list</p>
+            <h3>搜索商品</h3>
+            <p>接口描述：根据关键词搜索商品，支持同时匹配商品标题和商品描述</p>
+            <p>请求路径：/product/search</p>
             <p>请求方法：GET</p>
             <p>请求参数说明：</p>
             <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
@@ -401,6 +319,12 @@ public class ReleaseLocationVO {
                     <th>必选</th>
                     <th>类型</th>
                     <th>说明</th>
+                </tr>
+                <tr>
+                    <td>keyword</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>搜索关键词，用于匹配商品标题和描述</td>
                 </tr>
                 <tr>
                     <td>pageNum</td>
@@ -413,12 +337,6 @@ public class ReleaseLocationVO {
                     <td>否</td>
                     <td>int</td>
                     <td>每页数量，默认10，最大50</td>
-                </tr>
-                <tr>
-                    <td>keyword</td>
-                    <td>否</td>
-                    <td>string</td>
-                    <td>商品标题关键词搜索</td>
                 </tr>
                 <tr>
                     <td>categoryId</td>
@@ -468,17 +386,11 @@ public class ReleaseLocationVO {
                     <td>string</td>
                     <td>地区筛选</td>
                 </tr>
-                <tr>
-                    <td>sellerId</td>
-                    <td>否</td>
-                    <td>long</td>
-                    <td>卖家用户ID筛选</td>
-                </tr>
             </table>
             <p>请求数据模型：</p>
             <pre>
-// ProductPageQueryDao.java
-public class ProductPageQueryDao {
+// ProductSearchDao.java
+public class ProductSearchDao {
     
     /**
      * 当前页码，从1开始
@@ -491,7 +403,7 @@ public class ProductPageQueryDao {
     private Integer pageSize = 10;
     
     /**
-     * 商品标题关键词
+     * 搜索关键词，用于匹配商品标题和描述
      */
     private String keyword;
     
@@ -786,6 +698,330 @@ public class PageResult<T> {
     private Boolean hasNext;
 }
             </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>添加用户地址</h3>
+            <p>请求路径：/user/address</p>
+            <p>请求方法：POST</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "name": "张三",
+    "phone": "13800138000",
+    "province": "北京市",
+    "city": "北京市",
+    "district": "海淀区",
+    "detailAddress": "中关村南大街5号",
+    "isDefault": true
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": "地址添加成功",
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>用户发布商品列表</h3>
+            <p>接口描述：查询当前登录用户发布的所有商品列表，支持分页和状态筛选</p>
+            <p>请求路径：/product/my-list</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>pageNum</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>当前页码，从1开始，默认1</td>
+                </tr>
+                <tr>
+                    <td>pageSize</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>每页数量，默认10，最大50</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>商品状态筛选(0下架 1在售 2已售)，不传则查询全部状态</td>
+                </tr>
+                <tr>
+                    <td>keyword</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>商品标题关键词搜索</td>
+                </tr>
+                <tr>
+                    <td>sortField</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>排序字段(price-价格, time-时间, view-浏览量)，默认time</td>
+                </tr>
+                <tr>
+                    <td>sortOrder</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>排序方式(asc-升序, desc-降序)，默认desc</td>
+                </tr>
+            </table>
+            <p>请求数据模型：</p>
+            <pre>
+// MyProductPageQueryDao.java
+public class MyProductPageQueryDao {
+    
+    /**
+     * 当前页码，从1开始
+     */
+    private Integer pageNum = 1;
+    
+    /**
+     * 每页数量，默认10
+     */
+    private Integer pageSize = 10;
+    
+    /**
+     * 商品状态筛选 (0下架 1在售 2已售)
+     */
+    private Integer status;
+    
+    /**
+     * 商品标题关键词
+     */
+    private String keyword;
+    
+    /**
+     * 排序字段 (price-价格, time-时间, view-浏览量)
+     */
+    private String sortField = "time";
+    
+    /**
+     * 排序方式 (asc-升序, desc-降序)
+     */
+    private String sortOrder = "desc";
+}
+            </pre>
+            <p>请求示例：</p>
+            <pre>
+GET /product/my-list?pageNum=1&pageSize=10&status=1&sortField=time&sortOrder=desc
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>分页结果数据</td>
+                </tr>
+                <tr>
+                    <td>data.pageNum</td>
+                    <td>int</td>
+                    <td>当前页码</td>
+                </tr>
+                <tr>
+                    <td>data.pageSize</td>
+                    <td>int</td>
+                    <td>每页大小</td>
+                </tr>
+                <tr>
+                    <td>data.total</td>
+                    <td>long</td>
+                    <td>总记录数</td>
+                </tr>
+                <tr>
+                    <td>data.pages</td>
+                    <td>int</td>
+                    <td>总页数</td>
+                </tr>
+                <tr>
+                    <td>data.list</td>
+                    <td>array</td>
+                    <td>当前页商品列表</td>
+                </tr>
+                <tr>
+                    <td>data.hasPrevious</td>
+                    <td>boolean</td>
+                    <td>是否有上一页</td>
+                </tr>
+                <tr>
+                    <td>data.hasNext</td>
+                    <td>boolean</td>
+                    <td>是否有下一页</td>
+                </tr>
+            </table>
+            <p>商品列表项参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>productId</td>
+                    <td>long</td>
+                    <td>商品ID</td>
+                </tr>
+                <tr>
+                    <td>title</td>
+                    <td>string</td>
+                    <td>商品标题</td>
+                </tr>
+                <tr>
+                    <td>price</td>
+                    <td>decimal</td>
+                    <td>商品价格</td>
+                </tr>
+                <tr>
+                    <td>originalPrice</td>
+                    <td>decimal</td>
+                    <td>商品原价</td>
+                </tr>
+                <tr>
+                    <td>categoryId</td>
+                    <td>int</td>
+                    <td>分类ID</td>
+                </tr>
+                <tr>
+                    <td>categoryName</td>
+                    <td>string</td>
+                    <td>分类名称</td>
+                </tr>
+                <tr>
+                    <td>conditionLevel</td>
+                    <td>int</td>
+                    <td>物品成色(1-10级)</td>
+                </tr>
+                <tr>
+                    <td>location</td>
+                    <td>string</td>
+                    <td>商品所在地</td>
+                </tr>
+                <tr>
+                    <td>viewCount</td>
+                    <td>int</td>
+                    <td>浏览次数</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>int</td>
+                    <td>商品状态(0下架 1在售 2已售)</td>
+                </tr>
+                <tr>
+                    <td>statusText</td>
+                    <td>string</td>
+                    <td>商品状态文本描述</td>
+                </tr>
+                <tr>
+                    <td>createdTime</td>
+                    <td>datetime</td>
+                    <td>发布时间</td>
+                </tr>
+                <tr>
+                    <td>mainImageUrl</td>
+                    <td>string</td>
+                    <td>商品主图URL</td>
+                </tr>
+            </table>
+            <p>响应数据模型：</p>
+            <pre>
+// MyProductPageVO.java
+public class MyProductPageVO {
+    
+    /**
+     * 商品ID
+     */
+    private Long productId;
+    
+    /**
+     * 商品标题
+     */
+    private String title;
+    
+    /**
+     * 商品价格
+     */
+    private BigDecimal price;
+    
+    /**
+     * 物品原价
+     */
+    private BigDecimal originalPrice;
+    
+    /**
+     * 商品分类ID
+     */
+    private Integer categoryId;
+    
+    /**
+     * 商品分类名称
+     */
+    private String categoryName;
+    
+    /**
+     * 物品成色(1-10级)
+     */
+    private Integer conditionLevel;
+    
+    /**
+     * 商品所在地
+     */
+    private String location;
+    
+    /**
+     * 浏览次数
+     */
+    private Integer viewCount;
+    
+    /**
+     * 商品状态(0下架 1在售 2已售)
+     */
+    private Integer status;
+    
+    /**
+     * 商品状态文本描述
+     */
+    private String statusText;
+    
+    /**
+     * 发布时间
+     */
+    private Date createdTime;
+    
+    /**
+     * 商品主图URL
+     */
+    private String mainImageUrl;
+}
+            </pre>
             <p>响应示例：</p>
             <pre>
 {
@@ -793,44 +1029,157 @@ public class PageResult<T> {
     "data": {
         "pageNum": 1,
         "pageSize": 10,
-        "total": 28,
+        "total": 25,
         "pages": 3,
         "list": [
             {
-                "productId": 1,
-                "title": "iPhone 12 Pro 128G 海蓝色",
-                "price": 4299.00,
-                "originalPrice": 6999.00,
-                "categoryId": 3,
+                "productId": 123,
+                "title": "二手iPhone 12 Pro Max 256G",
+                "price": 5800.00,
+                "originalPrice": 9599.00,
+                "categoryId": 2,
                 "categoryName": "手机数码",
-                "userId": 5,
-                "username": "张三",
-                "conditionLevel": 9,
-                "location": "北京市海淀区",
-                "viewCount": 253,
-                "createdTime": "2023-06-01T10:30:00",
-                "mainImageUrl": "https://example.com/images/iphone12_1.jpg"
+                "conditionLevel": 8,
+                "location": "广东省深圳市南山区",
+                "viewCount": 235,
+                "status": 1,
+                "statusText": "在售",
+                "createdTime": "2023-08-01T15:30:45.000+08:00",
+                "mainImageUrl": "https://example.com/images/products/iphone12.jpg"
             },
             {
-                "productId": 2,
-                "title": "MacBook Pro 2021 M1芯片",
-                "price": 8999.00,
-                "originalPrice": 12999.00,
+                "productId": 124,
+                "title": "联想拯救者Y7000P 游戏本",
+                "price": 6500.00,
+                "originalPrice": 8999.00,
                 "categoryId": 3,
-                "categoryName": "手机数码",
-                "userId": 8,
-                "username": "李四",
-                "conditionLevel": 8,
-                "location": "上海市浦东新区",
-                "viewCount": 187,
-                "createdTime": "2023-06-02T14:20:00",
-                "mainImageUrl": "https://example.com/images/macbook_1.jpg"
+                "categoryName": "电脑办公",
+                "conditionLevel": 9,
+                "location": "广东省深圳市南山区",
+                "viewCount": 188,
+                "status": 1,
+                "statusText": "在售",
+                "createdTime": "2023-07-30T10:15:22.000+08:00",
+                "mainImageUrl": "https://example.com/images/products/lenovo.jpg"
             }
-            // ... 更多商品数据
         ],
         "hasPrevious": false,
         "hasNext": true
     },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>需要用户登录后访问此接口</li>
+                <li>此接口仅返回当前登录用户发布的商品</li>
+                <li>status参数不传时，返回所有状态的商品</li>
+                <li>分页查询结果按创建时间降序排列</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>获取商品列表</h3>
+            <p>请求路径：/product/list</p>
+            <p>请求方法：GET</p>
+            <p>请求参数：</p>
+            <pre>
+keyword: 搜索关键字 (可选)
+categoryId: 分类ID (可选)
+pageNum: 页码 (默认1)
+file: 要上传的文件（form-data类型）
+            </pre>
+            <p>支持的文件类型：jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, zip, rar</p>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "fileName": "example.jpg",
+        "fileUrl": "http://localhost:8080/files/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6.jpg",
+        "fileSize": "123456",
+        "fileType": "image/jpeg"
+    },
+    "message": "success"
+}
+            </pre>
+        </div>
+
+        <div class="api-item">
+            <h3>获取商品总数</h3>
+            <p>接口描述：获取系统中符合指定状态的商品总数</p>
+            <p>请求路径：/product/count</p>
+            <p>请求方法：GET</p>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>否</td>
+                    <td>integer</td>
+                    <td>商品状态(0下架 1在售 2已售)，不传表示获取所有状态的商品数量</td>
+                </tr>
+            </table>
+            <p>请求示例：</p>
+            <pre>
+GET /product/count?status=1
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>long</td>
+                    <td>商品总数</td>
+                </tr>
+            </table>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": 123,
     "message": "success"
 }
             </pre>
@@ -855,937 +1204,12 @@ public class PageResult<T> {
             </table>
             <p>备注：</p>
             <ol>
-                <li>分页查询默认返回在售(status=1)的商品</li>
-                <li>如果不指定排序规则，默认按发布时间降序排列（最新发布的商品排在前面）</li>
-                <li>每页最多返回50条数据，超过限制会自动调整为50</li>
-                <li>categoryId对应的分类名称会自动关联查询并返回</li>
-                <li>商品主图(is_main=1)会自动关联查询并返回</li>
+                <li>此接口不需要用户登录即可访问</li>
+                <li>status参数不传时，返回所有状态的商品总数</li>
+                <li>status=1时，返回在售商品总数</li>
+                <li>status=2时，返回已售商品总数</li>
+                <li>status=0时，返回下架商品总数</li>
             </ol>
-        </div>
-
-        <div class="api-item">
-            <h3>添加商品</h3>
-            <p>请求路径：/product/add</p>
-            <p>请求方法：POST</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "title": "iPhone 12",
-    "description": "95新iPhone12",
-    "price": 3999.00,
-    "originalPrice": 5999.00,
-    "categoryId": 1,
-    "conditionLevel": 9,
-    "status": 1,
-    "location": "北京市"
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "productId": 1,
-        "title": "iPhone 12",
-        "description": "95新iPhone12",
-        "price": 3999.00,
-        "originalPrice": 5999.00,
-        "categoryId": 1,
-        "conditionLevel": 9,
-        "status": 1,
-        "location": "北京市"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取商品详情</h3>
-            <p>请求路径：/product/detail/{productId}</p>
-            <p>请求方法：GET</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "productId": 1,
-        "title": "iPhone 12",
-        "description": "95新iPhone12",
-        "price": 3999.00,
-        "originalPrice": 5999.00,
-        "categoryId": 1,
-        "conditionLevel": 9,
-        "status": 1,
-        "location": "北京市",
-        "viewCount": 100,
-        "createdTime": "2025-04-14 10:00:00"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>更新商品信息</h3>
-            <p>请求路径：/product/update</p>
-            <p>请求方法：PUT</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 1,
-    "title": "iPhone 12 Pro",
-    "price": 4999.00,
-    "status": 1,
-    "description": "95新iPhone12 Pro，国行正品"
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "productId": 1,
-        "title": "iPhone 12 Pro",
-        "price": 4999.00,
-        "status": 1
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>删除商品</h3>
-            <p>请求路径：/product/delete/{productId}</p>
-            <p>请求方法：DELETE</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": "商品删除成功",
-    "message": "success"
-}
-            </pre>
-        </div>
-    </div>
-
-    <!-- 商品收藏模块 -->
-    <div class="api-section">
-        <h2>商品收藏模块</h2>
-
-        <div class="api-item">
-            <h3>收藏商品</h3>
-            <p>请求路径：/product/favorite/add</p>
-            <p>请求方法：POST</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 1,
-    "userId": 1
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "favoriteId": 1,
-        "productId": 1,
-        "userId": 1,
-        "createdTime": "2025-04-14 10:00:00"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>取消收藏商品</h3>
-            <p>请求路径：/product/favorite/{productId}</p>
-            <p>请求方法：DELETE</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": "取消收藏成功",
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取收藏列表</h3>
-            <p>请求路径：/product/favorite/list</p>
-            <p>请求方法：GET</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": [
-        {
-            "favoriteId": 1,
-            "productId": 1,
-            "productTitle": "iPhone 12",
-            "productPrice": 3999.00,
-            "createdTime": "2025-04-14 10:00:00"
-        }
-    ],
-    "message": "success"
-}
-            </pre>
-        </div>
-    </div>
-
-    <!-- 商品图片模块 -->
-    <div class="api-section">
-        <h2>商品图片模块</h2>
-
-        <div class="api-item">
-            <h3>上传商品图片</h3>
-            <p>请求路径：/product/image/upload</p>
-            <p>请求方法：POST</p>
-            <p>请求类型：multipart/form-data</p>
-            <p>请求参数：</p>
-            <pre>
-productId: 1 (商品ID，必填)
-isMain: 1 (是否为主图，0-否，1-是，可选，默认0)
-sortOrder: 0 (图片排序，可选，默认0)
-imageFile: [文件] (图片文件，必填，支持jpg、jpeg、png、gif格式)
-            </pre>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "imageId": 1,
-        "productId": 1,
-        "imageUrl": "http://localhost:8080/images/2e45f7a1-b8c2-4d3a-9e1c-7b164aa95f23.jpg",
-        "isMain": 1,
-        "sortOrder": 0
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>通过URL添加商品图片</h3>
-            <p>请求路径：/product/image/add-by-url</p>
-            <p>请求方法：POST</p>
-            <p>请求类型：application/json</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 1,
-    "imageUrl": "https://example.com/images/product1.jpg",
-    "isMain": 1,
-    "sortOrder": 0
-}
-            </pre>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "imageId": 1,
-        "productId": 1,
-        "imageUrl": "https://example.com/images/product1.jpg",
-        "isMain": 1,
-        "sortOrder": 0
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>批量添加商品图片</h3>
-            <p>请求路径：/product/image/add</p>
-            <p>请求方法：POST</p>
-            <p>请求类型：application/json</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 1,
-    "isMain": 1,
-    "sortOrder": 0,
-    "imageUrls": [
-        "https://example.com/images/product1.jpg",
-        "https://example.com/images/product2.jpg",
-        "https://example.com/images/product3.jpg"
-    ]
-}
-            </pre>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": [
-        {
-            "imageId": 1,
-            "productId": 1,
-            "imageUrl": "https://example.com/images/product1.jpg",
-            "isMain": 1,
-            "sortOrder": 0,
-            "createdTime": "2025-04-14 10:30:00"
-        },
-        {
-            "imageId": 2,
-            "productId": 1,
-            "imageUrl": "https://example.com/images/product2.jpg",
-            "isMain": 0,
-            "sortOrder": 1,
-            "createdTime": "2025-04-14 10:30:00"
-        },
-        {
-            "imageId": 3,
-            "productId": 1,
-            "imageUrl": "https://example.com/images/product3.jpg",
-            "isMain": 0,
-            "sortOrder": 2,
-            "createdTime": "2025-04-14 10:30:00"
-        }
-    ],
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>删除商品图片</h3>
-            <p>请求路径：/product/image/{productId}/{imageId}</p>
-            <p>请求方法：DELETE</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": "图片删除成功",
-    "message": "success"
-}
-            </pre>
-        </div>
-    </div>
-
-    <!-- 商品举报模块 -->
-    <div class="api-section">
-        <h2>商品举报模块</h2>
-
-        <div class="api-item">
-            <h3>举报商品</h3>
-            <p>请求路径：/product/report/add</p>
-            <p>请求方法：POST</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 1,
-    "userId": 1,
-    "reportType": 1,
-    "reportContent": "商品涉嫌虚假宣传"
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "reportId": 1,
-        "productId": 1,
-        "reportType": 1,
-        "reportContent": "商品涉嫌虚假宣传",
-        "status": 0,
-        "createdTime": "2025-04-14 10:00:00"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取商品举报列表</h3>
-            <p>请求路径：/product/report/list/{productId}</p>
-            <p>请求方法：GET</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": [
-        {
-            "reportId": 1,
-            "productId": 1,
-            "reportType": 1,
-            "reportContent": "商品涉嫌虚假宣传",
-            "status": 0,
-            "createdTime": "2025-04-14 10:00:00"
-        }
-    ],
-    "message": "success"
-}
-            </pre>
-        </div>
-    </div>
-
-    <!-- 商品交易方式模块 -->
-    <div class="api-section">
-        <h2>商品交易方式模块</h2>
-
-        <div class="api-item">
-            <h3>添加交易方式</h3>
-            <p>请求路径：/product/trade/method/add</p>
-            <p>请求方法：POST</p>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "methodName": "上门回收",
-    "methodDesc": "由回收人员上门进行商品回收交易"
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "methodId": 1,
-        "methodName": "上门回收",
-        "methodDesc": "由回收人员上门进行商品回收交易"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-    </div>
-
-     <!-- 订单模块 -->
-     <div class="api-section">
-        <h2>订单模块</h2>
-
-        <div class="api-item">
-            <h3>创建订单</h3>
-            <p>请求路径：/order/create</p>
-            <p>请求方法：POST</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "productId": 3,
-    "sellerId": 2,
-    "paymentType": 1,
-    "deliveryType": 2,
-    "orderAmount": 3999.00,
-    "paymentAmount": 3999.00,
-    "deliveryFee": 15.00,
-    "remark": "希望尽快发货",
-    "address": {
-        "receiverName": "张三",
-        "receiverPhone": "13800138000",
-        "province": "北京市",
-        "city": "北京市",
-        "district": "海淀区",
-        "detailAddress": "中关村大街1号"
-    }
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "orderId": 1,
-        "orderNo": "202504141528120123456",
-        "userId": 1,
-        "sellerId": 2,
-        "productId": 3,
-        "productTitle": "iPhone 12",
-        "orderAmount": 3999.00,
-        "paymentAmount": 3999.00,
-        "orderStatus": 0,
-        "paymentType": 1,
-        "deliveryType": 2,
-        "deliveryFee": 15.00,
-        "remark": "希望尽快发货",
-        "createdTime": "2025-04-14 15:28:12",
-        "address": {
-            "receiverName": "张三",
-            "receiverPhone": "13800138000",
-            "province": "北京市",
-            "city": "北京市",
-            "district": "海淀区",
-            "detailAddress": "中关村大街1号"
-        }
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取订单列表</h3>
-            <p>请求路径：/order/list</p>
-            <p>请求方法：GET</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": [
-        {
-            "orderId": 1,
-            "orderNo": "202504141528120123456",
-            "userId": 1,
-            "sellerId": 2,
-            "productId": 3,
-            "productTitle": "iPhone 12",
-            "orderAmount": 3999.00,
-            "paymentAmount": 3999.00,
-            "orderStatus": 0,
-            "paymentType": 1,
-            "deliveryType": 2,
-            "deliveryFee": 15.00,
-            "remark": "希望尽快发货",
-            "createdTime": "2025-04-14 15:28:12",
-            "address": {
-                "receiverName": "张三",
-                "receiverPhone": "13800138000",
-                "province": "北京市",
-                "city": "北京市",
-                "district": "海淀区",
-                "detailAddress": "中关村大街1号"
-            }
-        }
-    ],
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>取消订单</h3>
-            <p>请求路径：/order/cancel</p>
-            <p>请求方法：PUT</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "orderId": 1,
-    "remark": "商品不符合预期，申请取消"
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "orderId": 1,
-        "orderNo": "202504141528120123456",
-        "userId": 1,
-        "sellerId": 2,
-        "productId": 3,
-        "productTitle": "iPhone 12",
-        "orderAmount": 3999.00,
-        "paymentAmount": 3999.00,
-        "orderStatus": 4,
-        "paymentType": 1,
-        "deliveryType": 2,
-        "deliveryFee": 15.00,
-        "remark": "希望尽快发货",
-        "createdTime": "2025-04-14 15:28:12",
-        "address": {
-            "receiverName": "张三",
-            "receiverPhone": "13800138000",
-            "province": "北京市",
-            "city": "北京市",
-            "district": "海淀区",
-            "detailAddress": "中关村大街1号"
-        }
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>支付订单</h3>
-            <p>请求路径：/order/pay</p>
-            <p>请求方法：PUT</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "orderId": 1,
-    "userId": 1,
-    "paymentType": 1,
-    "paymentChannel": 2,
-    "transactionNo": "wx202504141528120123456"
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "orderId": 1,
-        "orderNo": "202504141528120123456",
-        "userId": 1,
-        "sellerId": 2,
-        "productId": 3,
-        "productTitle": "iPhone 12",
-        "orderAmount": 3999.00,
-        "paymentAmount": 3999.00,
-        "orderStatus": 1,
-        "paymentType": 1,
-        "paymentChannel": 2,
-        "transactionNo": "wx202504141528120123456",
-        "paymentTime": "2025-04-14 15:28:12",
-        "deliveryType": 2,
-        "deliveryFee": 15.00,
-        "remark": "希望尽快发货",
-        "createdTime": "2025-04-14 15:28:12",
-        "address": {
-            "receiverName": "张三",
-            "receiverPhone": "13800138000",
-            "province": "北京市",
-            "city": "北京市",
-            "district": "海淀区",
-            "detailAddress": "中关村大街1号"
-        }
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>通知收货（发货）</h3>
-            <p>请求路径：/order/notify-shipment</p>
-            <p>请求方法：PUT</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "orderId": 1,
-    "sellerId": 2
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "orderId": 1,
-        "orderNo": "202504141528120123456",
-        "userId": 1,
-        "sellerId": 2,
-        "productId": 3,
-        "productTitle": "iPhone 12",
-        "orderAmount": 3999.00,
-        "paymentAmount": 3999.00,
-        "orderStatus": 2,
-        "paymentType": 1,
-        "paymentTime": "2025-04-14 15:28:12",
-        "deliveryType": 2,
-        "deliveryFee": 15.00,
-        "deliveryTime": "2025-04-15 09:30:45",
-        "remark": "希望尽快发货",
-        "createdTime": "2025-04-14 15:28:12",
-        "address": {
-            "receiverName": "张三",
-            "receiverPhone": "13800138000",
-            "province": "北京市",
-            "city": "北京市",
-            "district": "海淀区",
-            "detailAddress": "中关村大街1号"
-        }
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>确认收货</h3>
-            <p>请求路径：/order/confirm-receipt</p>
-            <p>请求方法：PUT</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "orderId": 1,
-    "userId": 1
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "orderId": 1,
-        "orderNo": "202504141528120123456",
-        "userId": 1,
-        "sellerId": 2,
-        "productId": 3,
-        "productTitle": "iPhone 12",
-        "orderAmount": 3999.00,
-        "paymentAmount": 3999.00,
-        "orderStatus": 3,
-        "paymentType": 1,
-        "paymentTime": "2025-04-14 15:28:12",
-        "deliveryType": 2,
-        "deliveryFee": 15.00,
-        "receivedTime": "2025-04-16 10:30:22",
-        "remark": "希望尽快发货",
-        "createdTime": "2025-04-14 15:28:12",
-        "address": {
-            "receiverName": "张三",
-            "receiverPhone": "13800138000",
-            "province": "北京市",
-            "city": "北京市",
-            "district": "海淀区",
-            "detailAddress": "中关村大街1号"
-        }
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>订单评价</h3>
-            <p>请求路径：/order/review/add</p>
-            <p>请求方法：POST</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "orderId": 1,
-    "productId": 3,
-    "userId": 1,
-    "sellerId": 2,
-    "content": "商品质量很好，物流速度快，卖家服务态度很好",
-    "rating": 5,
-    "isAnonymous": 0
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "reviewId": 1,
-        "orderId": 1,
-        "productId": 3,
-        "productTitle": "iPhone 12",
-        "userId": 1,
-        "username": "张三",
-        "sellerId": 2,
-        "sellerName": "李四",
-        "content": "商品质量很好，物流速度快，卖家服务态度很好",
-        "rating": 5,
-        "isAnonymous": 0,
-        "hasReply": 0,
-        "createdTime": "2025-04-16 15:30:22"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>发送订单消息（催促发货）</h3>
-            <p>请求路径：/order/message/send</p>
-            <p>请求方法：POST</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>请求数据示例：</p>
-            <pre>
-{
-    "orderId": 1,
-    "productId": 3,
-    "senderId": 1,
-    "receiverId": 2,
-    "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。"
-}
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "messageId": 1,
-        "orderId": 1,
-        "orderNo": "202504141528120123456",
-        "productId": 3,
-        "productTitle": "iPhone 12",
-        "senderId": 1,
-        "senderName": "张三",
-        "receiverId": 2,
-        "receiverName": "李四",
-        "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。",
-        "isRead": 0,
-        "createdTime": "2025-04-17 09:30:45"
-    },
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取订单消息列表</h3>
-            <p>请求路径：/order/message/list/{orderId}</p>
-            <p>请求方法：GET</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": [
-        {
-            "messageId": 1,
-            "orderId": 1,
-            "orderNo": "202504141528120123456",
-            "productId": 3,
-            "productTitle": "iPhone 12",
-            "senderId": 1,
-            "senderName": "张三",
-            "receiverId": 2,
-            "receiverName": "李四",
-            "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。",
-            "isRead": 0,
-            "createdTime": "2025-04-17 09:30:45"
-        }
-    ],
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>获取接收的消息列表</h3>
-            <p>请求路径：/order/message/received/{userId}</p>
-            <p>请求方法：GET</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": [
-        {
-            "messageId": 1,
-            "orderId": 1,
-            "orderNo": "202504141528120123456",
-            "productId": 3,
-            "productTitle": "iPhone 12",
-            "senderId": 1,
-            "senderName": "张三",
-            "receiverId": 2,
-            "receiverName": "李四",
-            "content": "您好，请问我购买的商品什么时候发货？期待尽快收到。",
-            "isRead": 0,
-            "createdTime": "2025-04-17 09:30:45"
-        },
-        {
-            "messageId": 3,
-            "orderId": 2,
-            "orderNo": "202504151028330123789",
-            "productId": 5,
-            "productTitle": "MacBook Pro",
-            "senderId": 3,
-            "senderName": "王五",
-            "receiverId": 2,
-            "receiverName": "李四",
-            "content": "我刚刚确认了订单，可以发货了吗？",
-            "isRead": 1,
-            "createdTime": "2025-04-16 10:35:22"
-        }
-    ],
-    "message": "success"
-}
-            </pre>
-        </div>
-
-        <div class="api-item">
-            <h3>标记消息为已读</h3>
-            <p>请求路径：/order/message/read/{messageId}</p>
-            <p>请求方法：PUT</p>
-            <p>请求头：</p>
-            <pre>
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-            </pre>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": true,
-    "message": "success"
-}
-            </pre>
-        </div>
-        
-    </div>
-
-    <!-- 文件上传模块 -->
-    <div class="api-section">
-        <h2>文件上传模块</h2>
-
-        <div class="api-item">
-            <h3>通用文件上传</h3>
-            <p>请求路径：/file/upload</p>
-            <p>请求方法：POST</p>
-            <p>请求类型：multipart/form-data</p>
-            <p>请求参数：</p>
-            <pre>
-file: 要上传的文件（form-data类型）
-            </pre>
-            <p>支持的文件类型：jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, zip, rar</p>
-            <p>响应示例：</p>
-            <pre>
-{
-    "code": 0,
-    "data": {
-        "fileName": "example.jpg",
-        "fileUrl": "http://localhost:8080/files/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6.jpg",
-        "fileSize": "123456",
-        "fileType": "image/jpeg"
-    },
-    "message": "success"
-}
-            </pre>
         </div>
     </div>
 
@@ -3189,8 +2613,985 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
                 <li>为安全起见，建议前端对新密码进行加密后再传输</li>
             </ol>
         </div>
+
+        <div class="api-item">
+            <h3>验证码登录（新版）</h3>
+            <p>请求路径：/verification/verify-login</p>
+            <p>请求方法：POST</p>
+            <p>接口说明：接收用户输入的手机号码和验证码，检查验证码的有效性，若验证通过则完成用户登录流程，并返回用户详细信息</p>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "phoneNumber": "13800138000",
+    "verificationCode": "123456"
+}
+            </pre>
+            <p>成功响应示例：</p>
+            <pre>
+{
+    "status": 200,
+    "message": "登录成功",
+    "data": {
+        "userId": 1,
+        "username": "example_user",
+        "role": "普通用户",
+        "token": "eyJhbGciOiJIUzI1NiJ9..."
+    }
+}
+            </pre>
+            <p>失败响应示例：</p>
+            <pre>
+{
+    "status": 400,
+    "message": "验证码错误、已过期或已使用",
+    "data": null
+}
+            </pre>
+        </div>
     </div>
 
-// ... existing code ...
+    <!-- 测试接口模块 -->
+    <div class="api-section">
+        <h2>测试接口模块</h2>
+
+        <div class="api-item">
+            <h3>健康检查接口</h3>
+            <p>接口描述：检查服务器是否正常运行，可用于监控系统健康状态</p>
+            <p>请求路径：/api/health</p>
+            <p>请求方法：GET</p>
+            <p>请求示例：</p>
+            <pre>
+GET /api/health
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>string</td>
+                    <td>服务状态，"UP"表示正常运行</td>
+                </tr>
+                <tr>
+                    <td>timestamp</td>
+                    <td>datetime</td>
+                    <td>当前服务器时间</td>
+                </tr>
+                <tr>
+                    <td>version</td>
+                    <td>string</td>
+                    <td>应用程序版本号</td>
+                </tr>
+            </table>
+            <p>响应示例：</p>
+            <pre>
+{
+    "status": "UP",
+    "timestamp": "2023-08-01T14:30:15.123Z",
+    "version": "1.0.0"
+}
+            </pre>
+            <p>错误码说明：此接口不返回错误码，如果服务不可用则无法访问</p>
+            <p>备注：</p>
+            <ol>
+                <li>此接口无需授权即可访问</li>
+                <li>可用于监控系统、负载均衡器等检查服务是否正常</li>
+                <li>响应时间可作为服务性能指标参考</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>数据库连接测试</h3>
+            <p>接口描述：测试应用与数据库的连接是否正常</p>
+            <p>请求路径：/api/test/db-connection</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9... (管理员权限)
+            </pre>
+            <p>请求示例：</p>
+            <pre>
+GET /api/test/db-connection
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>数据库连接信息</td>
+                </tr>
+                <tr>
+                    <td>data.connected</td>
+                    <td>boolean</td>
+                    <td>是否连接成功</td>
+                </tr>
+                <tr>
+                    <td>data.responseTime</td>
+                    <td>long</td>
+                    <td>响应时间(毫秒)</td>
+                </tr>
+                <tr>
+                    <td>data.databaseInfo</td>
+                    <td>string</td>
+                    <td>数据库版本信息</td>
+                </tr>
+            </table>
+            <p>响应示例(成功)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "connected": true,
+        "responseTime": 5,
+        "databaseInfo": "MySQL 8.0.28"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>响应示例(失败)：</p>
+            <pre>
+{
+    "code": 50002,
+    "message": "数据库连接失败",
+    "data": {
+        "connected": false,
+        "responseTime": null,
+        "databaseInfo": null
+    }
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权或权限不足</td>
+                </tr>
+                <tr>
+                    <td>50002</td>
+                    <td>数据库连接失败</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口仅供系统管理员使用，需要管理员权限</li>
+                <li>用于诊断系统与数据库连接相关的问题</li>
+                <li>responseTime字段可用于监控数据库响应时间</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>Redis连接测试</h3>
+            <p>接口描述：测试应用与Redis缓存服务的连接是否正常</p>
+            <p>请求路径：/api/test/redis-connection</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9... (管理员权限)
+            </pre>
+            <p>请求示例：</p>
+            <pre>
+GET /api/test/redis-connection
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>Redis连接信息</td>
+                </tr>
+                <tr>
+                    <td>data.connected</td>
+                    <td>boolean</td>
+                    <td>是否连接成功</td>
+                </tr>
+                <tr>
+                    <td>data.responseTime</td>
+                    <td>long</td>
+                    <td>响应时间(毫秒)</td>
+                </tr>
+                <tr>
+                    <td>data.redisInfo</td>
+                    <td>string</td>
+                    <td>Redis版本信息</td>
+                </tr>
+            </table>
+            <p>响应示例(成功)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "connected": true,
+        "responseTime": 2,
+        "redisInfo": "Redis 6.2.6"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>响应示例(失败)：</p>
+            <pre>
+{
+    "code": 50003,
+    "message": "Redis连接失败",
+    "data": {
+        "connected": false,
+        "responseTime": null,
+        "redisInfo": null
+    }
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权或权限不足</td>
+                </tr>
+                <tr>
+                    <td>50003</td>
+                    <td>Redis连接失败</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口仅供系统管理员使用，需要管理员权限</li>
+                <li>用于诊断系统与Redis缓存服务连接相关的问题</li>
+                <li>可用于监控Redis服务的可用性和响应时间</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>短信服务测试</h3>
+            <p>接口描述：测试短信服务功能是否正常</p>
+            <p>请求路径：/api/test/sms</p>
+            <p>请求方法：POST</p>
+            <p>请求类型：application/json</p>
+            <p>请求头：</p>
+            <pre>
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9... (管理员权限)
+            </pre>
+            <p>请求数据示例：</p>
+            <pre>
+{
+    "phoneNumber": "13800138000",
+    "messageType": "TEST"
+}
+            </pre>
+            <p>请求数据模型：</p>
+            <pre>
+// TestSmsDto.java
+public class TestSmsDto {
+    
+    /**
+     * 测试用手机号
+     */
+    @NotBlank(message = "手机号不能为空")
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
+    private String phoneNumber;
+    
+    /**
+     * 短信类型，固定为TEST
+     */
+    private String messageType = "TEST";
+}
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>短信发送结果</td>
+                </tr>
+                <tr>
+                    <td>data.sent</td>
+                    <td>boolean</td>
+                    <td>是否发送成功</td>
+                </tr>
+                <tr>
+                    <td>data.messageId</td>
+                    <td>string</td>
+                    <td>短信服务商返回的消息ID</td>
+                </tr>
+                <tr>
+                    <td>data.provider</td>
+                    <td>string</td>
+                    <td>短信服务提供商</td>
+                </tr>
+                <tr>
+                    <td>data.responseTime</td>
+                    <td>long</td>
+                    <td>响应时间(毫秒)</td>
+                </tr>
+            </table>
+            <p>响应示例(成功)：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "sent": true,
+        "messageId": "SMS_123456789",
+        "provider": "Aliyun",
+        "responseTime": 320
+    },
+    "message": "success"
+}
+            </pre>
+            <p>响应示例(失败)：</p>
+            <pre>
+{
+    "code": 50004,
+    "message": "短信服务调用失败",
+    "data": {
+        "sent": false,
+        "messageId": null,
+        "provider": "Aliyun",
+        "responseTime": null
+    }
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权或权限不足</td>
+                </tr>
+                <tr>
+                    <td>50004</td>
+                    <td>短信服务调用失败</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口仅供系统管理员使用，需要管理员权限</li>
+                <li>用于测试短信服务的连通性和功能</li>
+                <li>测试短信会发送固定的测试内容到指定手机号</li>
+                <li>此接口不计入用户的短信发送配额</li>
+            </ol>
+        </div>
+
+        <div class="api-item">
+            <h3>系统运行状态</h3>
+            <p>接口描述：获取系统各组件的运行状态和性能数据</p>
+            <p>请求路径：/api/system/status</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9... (管理员权限)
+            </pre>
+            <p>请求示例：</p>
+            <pre>
+GET /api/system/status
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>系统状态信息</td>
+                </tr>
+                <tr>
+                    <td>data.serverTime</td>
+                    <td>datetime</td>
+                    <td>服务器当前时间</td>
+                </tr>
+                <tr>
+                    <td>data.jvmInfo</td>
+                    <td>object</td>
+                    <td>JVM相关信息</td>
+                </tr>
+                <tr>
+                    <td>data.memoryUsage</td>
+                    <td>object</td>
+                    <td>内存使用情况</td>
+                </tr>
+                <tr>
+                    <td>data.diskUsage</td>
+                    <td>object</td>
+                    <td>磁盘使用情况</td>
+                </tr>
+                <tr>
+                    <td>data.activeThreads</td>
+                    <td>int</td>
+                    <td>当前活跃线程数</td>
+                </tr>
+                <tr>
+                    <td>data.dbConnections</td>
+                    <td>int</td>
+                    <td>数据库连接数</td>
+                </tr>
+                <tr>
+                    <td>data.uptime</td>
+                    <td>string</td>
+                    <td>系统运行时间</td>
+                </tr>
+            </table>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "serverTime": "2023-08-01T15:30:45.123Z",
+        "jvmInfo": {
+            "version": "11.0.11",
+            "vendor": "Oracle Corporation",
+            "vmName": "Java HotSpot(TM) 64-Bit Server VM"
+        },
+        "memoryUsage": {
+            "total": 4294967296,
+            "used": 1073741824,
+            "free": 3221225472,
+            "usagePercentage": 25.0
+        },
+        "diskUsage": {
+            "total": 107374182400,
+            "used": 32212254720,
+            "free": 75161927680,
+            "usagePercentage": 30.0
+        },
+        "activeThreads": 25,
+        "dbConnections": 10,
+        "uptime": "3 days, 12 hours, 5 minutes"
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权或权限不足</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口仅供系统管理员使用，需要管理员权限</li>
+                <li>提供系统运行时的关键性能指标和状态信息</li>
+                <li>可用于监控系统健康状况和性能瓶颈</li>
+                <li>内存和磁盘使用量单位为字节(Byte)</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 管理员模块 -->
+    <div class="api-section">
+        <h2>管理员模块</h2>
+
+        <div class="api-item">
+            <h3>获取用户列表</h3>
+            <p>接口描述：分页获取用户列表信息，支持多种筛选条件和排序方式</p>
+            <p>请求路径：/admin/user/list</p>
+            <p>请求方法：GET</p>
+            <p>请求头：</p>
+            <pre>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9... (管理员权限)
+            </pre>
+            <p>请求参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>必选</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>pageNum</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>当前页码，从1开始，默认1</td>
+                </tr>
+                <tr>
+                    <td>pageSize</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>每页数量，默认10，最大50</td>
+                </tr>
+                <tr>
+                    <td>keyword</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>用户名/昵称/手机号关键词搜索</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>否</td>
+                    <td>int</td>
+                    <td>用户状态筛选(0-禁用 1-正常)，不传则查询全部</td>
+                </tr>
+                <tr>
+                    <td>startTime</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>注册开始时间，格式：yyyy-MM-dd HH:mm:ss</td>
+                </tr>
+                <tr>
+                    <td>endTime</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>注册结束时间，格式：yyyy-MM-dd HH:mm:ss</td>
+                </tr>
+                <tr>
+                    <td>sortField</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>排序字段(register-注册时间, login-最后登录时间)，默认register</td>
+                </tr>
+                <tr>
+                    <td>sortOrder</td>
+                    <td>否</td>
+                    <td>string</td>
+                    <td>排序方式(asc-升序, desc-降序)，默认desc</td>
+                </tr>
+            </table>
+            <p>请求数据模型：</p>
+            <pre>
+// UserPageQueryDao.java
+public class UserPageQueryDao {
+    
+    /**
+     * 当前页码，从1开始
+     */
+    private Integer pageNum = 1;
+    
+    /**
+     * 每页数量，默认10
+     */
+    private Integer pageSize = 10;
+    
+    /**
+     * 用户名/昵称/手机号关键词
+     */
+    private String keyword;
+    
+    /**
+     * 用户状态筛选(0-禁用 1-正常)
+     */
+    private Integer status;
+    
+    /**
+     * 注册开始时间
+     */
+    private String startTime;
+    
+    /**
+     * 注册结束时间
+     */
+    private String endTime;
+    
+    /**
+     * 排序字段 (register-注册时间, login-最后登录时间)
+     */
+    private String sortField = "register";
+    
+    /**
+     * 排序方式 (asc-升序, desc-降序)
+     */
+    private String sortOrder = "desc";
+}
+            </pre>
+            <p>请求示例：</p>
+            <pre>
+GET /admin/user/list?pageNum=1&pageSize=10&status=1&sortField=register&sortOrder=desc
+            </pre>
+            <p>响应参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>code</td>
+                    <td>int</td>
+                    <td>状态码，0表示成功</td>
+                </tr>
+                <tr>
+                    <td>message</td>
+                    <td>string</td>
+                    <td>提示信息</td>
+                </tr>
+                <tr>
+                    <td>data</td>
+                    <td>object</td>
+                    <td>分页结果数据</td>
+                </tr>
+                <tr>
+                    <td>data.pageNum</td>
+                    <td>int</td>
+                    <td>当前页码</td>
+                </tr>
+                <tr>
+                    <td>data.pageSize</td>
+                    <td>int</td>
+                    <td>每页大小</td>
+                </tr>
+                <tr>
+                    <td>data.total</td>
+                    <td>long</td>
+                    <td>总记录数</td>
+                </tr>
+                <tr>
+                    <td>data.pages</td>
+                    <td>int</td>
+                    <td>总页数</td>
+                </tr>
+                <tr>
+                    <td>data.list</td>
+                    <td>array</td>
+                    <td>当前页用户列表</td>
+                </tr>
+                <tr>
+                    <td>data.hasPrevious</td>
+                    <td>boolean</td>
+                    <td>是否有上一页</td>
+                </tr>
+                <tr>
+                    <td>data.hasNext</td>
+                    <td>boolean</td>
+                    <td>是否有下一页</td>
+                </tr>
+            </table>
+            <p>用户列表项参数说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>参数名</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>userId</td>
+                    <td>long</td>
+                    <td>用户ID</td>
+                </tr>
+                <tr>
+                    <td>username</td>
+                    <td>string</td>
+                    <td>用户名</td>
+                </tr>
+                <tr>
+                    <td>nickname</td>
+                    <td>string</td>
+                    <td>昵称</td>
+                </tr>
+                <tr>
+                    <td>avatar</td>
+                    <td>string</td>
+                    <td>头像URL</td>
+                </tr>
+                <tr>
+                    <td>phone</td>
+                    <td>string</td>
+                    <td>手机号(脱敏)</td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td>string</td>
+                    <td>邮箱(脱敏)</td>
+                </tr>
+                <tr>
+                    <td>gender</td>
+                    <td>int</td>
+                    <td>性别(0-未知 1-男 2-女)</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>int</td>
+                    <td>状态(0-禁用 1-正常)</td>
+                </tr>
+                <tr>
+                    <td>statusText</td>
+                    <td>string</td>
+                    <td>状态文本</td>
+                </tr>
+                <tr>
+                    <td>registerTime</td>
+                    <td>datetime</td>
+                    <td>注册时间</td>
+                </tr>
+                <tr>
+                    <td>lastLoginTime</td>
+                    <td>datetime</td>
+                    <td>最后登录时间</td>
+                </tr>
+                <tr>
+                    <td>role</td>
+                    <td>string</td>
+                    <td>用户角色(系统管理员/普通用户)</td>
+                </tr>
+                <tr>
+                    <td>productCount</td>
+                    <td>int</td>
+                    <td>发布商品数量</td>
+                </tr>
+                <tr>
+                    <td>orderCount</td>
+                    <td>int</td>
+                    <td>交易订单数量</td>
+                </tr>
+            </table>
+            <p>响应数据模型：</p>
+            <pre>
+// UserPageVO.java
+public class UserPageVO {
+    
+    /**
+     * 用户ID
+     */
+    private Long userId;
+    
+    /**
+     * 用户名
+     */
+    private String username;
+    
+    /**
+     * 昵称
+     */
+    private String nickname;
+    
+    /**
+     * 头像URL
+     */
+    private String avatar;
+    
+    /**
+     * 手机号(脱敏)
+     */
+    private String phone;
+    
+    /**
+     * 邮箱(脱敏)
+     */
+    private String email;
+    
+    /**
+     * 性别(0-未知 1-男 2-女)
+     */
+    private Integer gender;
+    
+    /**
+     * 状态(0-禁用 1-正常)
+     */
+    private Integer status;
+    
+    /**
+     * 状态文本
+     */
+    private String statusText;
+    
+    /**
+     * 注册时间
+     */
+    private Date registerTime;
+    
+    /**
+     * 最后登录时间
+     */
+    private Date lastLoginTime;
+    
+    /**
+     * 用户角色
+     */
+    private String role;
+    
+    /**
+     * 发布商品数量
+     */
+    private Integer productCount;
+    
+    /**
+     * 交易订单数量
+     */
+    private Integer orderCount;
+}
+            </pre>
+            <p>响应示例：</p>
+            <pre>
+{
+    "code": 0,
+    "data": {
+        "pageNum": 1,
+        "pageSize": 10,
+        "total": 152,
+        "pages": 16,
+        "list": [
+            {
+                "userId": 1001,
+                "username": "张三",
+                "nickname": "三哥",
+                "avatar": "https://example.com/avatars/default.png",
+                "phone": "138****1234",
+                "email": "zh****@example.com",
+                "gender": 1,
+                "status": 1,
+                "statusText": "正常",
+                "registerTime": "2023-07-15T10:23:45.000+08:00",
+                "lastLoginTime": "2023-08-10T15:30:22.000+08:00",
+                "role": "普通用户",
+                "productCount": 12,
+                "orderCount": 5
+            },
+            {
+                "userId": 1002,
+                "username": "李四",
+                "nickname": "四哥",
+                "avatar": "https://example.com/avatars/user1.png",
+                "phone": "139****5678",
+                "email": "li****@example.com",
+                "gender": 1,
+                "status": 1,
+                "statusText": "正常",
+                "registerTime": "2023-07-12T14:15:32.000+08:00",
+                "lastLoginTime": "2023-08-09T19:45:10.000+08:00",
+                "role": "普通用户",
+                "productCount": 8,
+                "orderCount": 3
+            }
+        ],
+        "hasPrevious": false,
+        "hasNext": true
+    },
+    "message": "success"
+}
+            </pre>
+            <p>错误码说明：</p>
+            <table border="1" cellspacing="0" cellpadding="5" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <th>错误码</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>成功</td>
+                </tr>
+                <tr>
+                    <td>40000</td>
+                    <td>请求参数错误</td>
+                </tr>
+                <tr>
+                    <td>40100</td>
+                    <td>未授权</td>
+                </tr>
+                <tr>
+                    <td>40300</td>
+                    <td>无权限访问</td>
+                </tr>
+                <tr>
+                    <td>50000</td>
+                    <td>系统内部错误</td>
+                </tr>
+            </table>
+            <p>备注：</p>
+            <ol>
+                <li>此接口需要管理员权限才能访问</li>
+                <li>手机号和邮箱返回时会进行脱敏处理</li>
+                <li>支持按用户名、昵称、手机号进行模糊搜索</li>
+                <li>可以根据用户状态、注册时间范围进行筛选</li>
+                <li>用户列表默认按注册时间降序排序</li>
+            </ol>
+        </div>
+    </div>
+
 </body>
 </html>

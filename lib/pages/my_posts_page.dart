@@ -27,15 +27,15 @@ class _MyPostsPageState extends State<MyPostsPage> {
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
 
-  // 用户ID
-  int? _userId;
+  // 筛选状态
+  int? _filterStatus;
 
   @override
   void initState() {
     super.initState();
     // 设置滚动监听，用于实现上拉加载更多
     _scrollController.addListener(_scrollListener);
-    _getUserInfo();
+    _fetchMyPosts(isRefresh: true);
   }
 
   @override
@@ -56,46 +56,8 @@ class _MyPostsPageState extends State<MyPostsPage> {
     }
   }
 
-  // 首先获取用户信息
-  Future<void> _getUserInfo() async {
-    try {
-      final response = await HttpUtil().get(Api.userInfo);
-
-      if (response.isSuccess && response.data != null) {
-        final userInfo = response.data as Map<String, dynamic>;
-        _userId = userInfo['userId'] as int?;
-        developer.log('获取用户ID成功: $_userId', name: 'MyPostsPage');
-
-        // 获取到用户ID后，再获取商品列表
-        _fetchMyPosts(isRefresh: true);
-      } else {
-        setState(() {
-          _isLoading = false;
-          _isError = true;
-          _errorMessage = '获取用户信息失败，请重新登录后再试';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _isError = true;
-        _errorMessage = '网络错误，请稍后再试';
-      });
-      developer.log('获取用户信息异常: $e', name: 'MyPostsPage');
-    }
-  }
-
   // 获取我的发布列表
   Future<void> _fetchMyPosts({bool isRefresh = false}) async {
-    if (_userId == null) {
-      setState(() {
-        _isLoading = false;
-        _isError = true;
-        _errorMessage = '获取用户信息失败，请重新登录后再试';
-      });
-      return;
-    }
-
     if (isRefresh) {
       setState(() {
         _isLoading = true;
@@ -111,11 +73,15 @@ class _MyPostsPageState extends State<MyPostsPage> {
       final Map<String, dynamic> params = {
         'pageNum': _pageNum,
         'pageSize': _pageSize,
-        'userId': _userId, // 添加userId作为查询参数
       };
 
-      // 发送请求获取用户已发布的商品
-      final response = await HttpUtil().get(Api.productList, params: params);
+      // 添加状态筛选，如果有选择状态的话
+      if (_filterStatus != null) {
+        params['status'] = _filterStatus;
+      }
+
+      // 发送请求获取用户已发布的商品，使用新的API接口
+      final response = await HttpUtil().get(Api.myProductList, params: params);
 
       if (response.isSuccess && response.data != null) {
         final data = response.data as Map<String, dynamic>;
@@ -183,6 +149,16 @@ class _MyPostsPageState extends State<MyPostsPage> {
       _hasMoreData = true;
     });
     return _fetchMyPosts(isRefresh: true);
+  }
+
+  // 按状态筛选商品
+  void _filterByStatus(int? status) {
+    setState(() {
+      _filterStatus = status;
+      _pageNum = 1;
+      _hasMoreData = true;
+    });
+    _fetchMyPosts(isRefresh: true);
   }
 
   // 删除发布的商品
@@ -279,6 +255,14 @@ class _MyPostsPageState extends State<MyPostsPage> {
         title:
             const Text('我的发布', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              _showFilterDialog();
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -287,6 +271,53 @@ class _MyPostsPageState extends State<MyPostsPage> {
               : _posts.isEmpty
                   ? _buildEmptyView()
                   : _buildPostsList(),
+    );
+  }
+
+  // 显示状态筛选对话框
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('商品状态筛选'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('全部'),
+              selected: _filterStatus == null,
+              onTap: () {
+                Navigator.pop(context);
+                _filterByStatus(null);
+              },
+            ),
+            ListTile(
+              title: const Text('在售中'),
+              selected: _filterStatus == 1,
+              onTap: () {
+                Navigator.pop(context);
+                _filterByStatus(1);
+              },
+            ),
+            ListTile(
+              title: const Text('已售出'),
+              selected: _filterStatus == 2,
+              onTap: () {
+                Navigator.pop(context);
+                _filterByStatus(2);
+              },
+            ),
+            ListTile(
+              title: const Text('已下架'),
+              selected: _filterStatus == 0,
+              onTap: () {
+                Navigator.pop(context);
+                _filterByStatus(0);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -23,6 +23,8 @@ class Api {
   static const String productUpdate = '/product/update'; // 更新商品信息
   static const String productDelete = '/product/delete/'; // 删除商品，需附加productId
   static const String productLocationAdd = '/product/location/add'; // 添加商品位置信息
+  static const String myProductList = '/product/my-list'; // 用户发布商品列表
+  static const String productSearch = '/product/search'; // 搜索商品
 
   // 商品收藏模块
   static const String favoriteAdd = '/product/favorite/add'; // 收藏商品

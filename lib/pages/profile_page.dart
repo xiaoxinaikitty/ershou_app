@@ -11,6 +11,7 @@ import 'order/order_receiving_page.dart'; // 导入待收货页面
 import 'auth/login_page.dart'; // 导入登录页面
 import 'my_posts_page.dart'; // 导入我的发布页面
 import 'wallet_page.dart'; // 导入钱包页面
+import 'cart_page.dart'; // 导入购物车页面
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -66,22 +67,21 @@ class _ProfilePageState extends State<ProfilePage> {
 
       if (response.isSuccess && response.data != null) {
         final userInfo = response.data as Map<String, dynamic>;
-        final userId = userInfo['userId'];
 
-        // 获取用户发布的商品数量
+        // 获取用户发布的商品数量（使用新接口）
         final Map<String, dynamic> params = {
           'pageNum': 1,
-          'pageSize': 100, // 设置一个较大的值以获取所有商品
-          'userId': userId,
+          'pageSize': 1, // 只需要获取总数，不需要具体数据
         };
 
+        // 使用新的专用接口获取用户发布的商品
         final productsResponse =
-            await HttpUtil().get(Api.productList, params: params);
+            await HttpUtil().get(Api.myProductList, params: params);
         int postCount = 0;
         if (productsResponse.isSuccess && productsResponse.data != null) {
           final data = productsResponse.data as Map<String, dynamic>;
-          final List<dynamic> productList = data['list'] ?? [];
-          postCount = productList.length;
+          // 从响应中获取总数量
+          postCount = data['total'] as int? ?? 0;
         }
 
         // 获取收藏数量
@@ -308,6 +308,18 @@ class _ProfilePageState extends State<ProfilePage> {
             const Text('个人中心', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () {
+              // 跳转到购物车页面
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CartPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
@@ -551,7 +563,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               _buildFunctionItem(Icons.list_alt, '我的发布'),
               _buildFunctionItem(Icons.favorite, '我的收藏'),
-              _buildFunctionItem(Icons.history, '浏览记录'),
+              _buildFunctionItem(Icons.shopping_cart, '购物车'),
               _buildFunctionItem(Icons.wallet, '我的钱包'),
             ],
           ),
@@ -582,6 +594,13 @@ class _ProfilePageState extends State<ProfilePage> {
             context,
             MaterialPageRoute(
               builder: (context) => const WalletPage(),
+            ),
+          );
+        } else if (title == '购物车') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CartPage(),
             ),
           );
         } else {

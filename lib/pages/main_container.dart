@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../widgets/bottom_navigation.dart';
 import 'home_page.dart';
 import 'local_page.dart';
-import 'message_page.dart';
 import 'profile_page.dart';
 import 'publish_page.dart';
+import 'cart_page.dart';
 
 class MainContainer extends StatefulWidget {
   const MainContainer({Key? key}) : super(key: key);
@@ -22,7 +22,7 @@ class _MainContainerState extends State<MainContainer> {
     const HomePage(),
     const LocalPage(),
     const PublishPage(),
-    const MessagePage(),
+    const CartPage(),
     const ProfilePage(),
   ];
 
@@ -68,7 +68,7 @@ class _MainContainerState extends State<MainContainer> {
           _pages[0], // 首页
           _pages[1], // 同城
           // 发布页不在PageView中，而是通过模态框显示
-          _pages[3], // 消息
+          _pages[3], // 购物车
           _pages[4], // 个人中心
         ],
         onPageChanged: (index) {
