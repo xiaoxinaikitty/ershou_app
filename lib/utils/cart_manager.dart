@@ -38,18 +38,38 @@ class CartManager {
             (cartItems[existingIndex]['quantity'] as int) + 1;
       } else {
         // 如果不存在，添加到购物车，默认数量为1
+        String mainImageUrl = product['mainImageUrl'] as String? ?? '';
+        developer.log('原始图片URL: $mainImageUrl', name: 'CartManager');
+
+        if (mainImageUrl.isNotEmpty) {
+          if (mainImageUrl.startsWith('http://localhost:8080')) {
+            mainImageUrl = mainImageUrl.replaceFirst(
+                'http://localhost:8080', 'http://192.168.200.30:8080');
+            developer.log('转换后的图片URL: $mainImageUrl', name: 'CartManager');
+          } else if (mainImageUrl.startsWith('/files/')) {
+            mainImageUrl = 'http://192.168.200.30:8080$mainImageUrl';
+            developer.log('转换后的图片URL: $mainImageUrl', name: 'CartManager');
+          } else if (!mainImageUrl.startsWith('http')) {
+            developer.log('无效的图片URL格式: $mainImageUrl', name: 'CartManager');
+            mainImageUrl = '';
+          }
+        }
+
         final Map<String, dynamic> cartItem = {
           'productId': product['productId'],
           'title': product['title'],
           'price': product['price'],
-          'imageUrl': product['mainImageUrl'],
+          'mainImageUrl': mainImageUrl,
           'quantity': 1,
         };
         cartItems.add(cartItem);
+        developer.log('添加商品到购物车: ${product['productId']}, 图片URL: $mainImageUrl',
+            name: 'CartManager');
       }
 
       // 保存更新后的购物车
-      return await _saveCartItems(cartItems);
+      final result = await _saveCartItems(cartItems);
+      return result;
     } catch (e) {
       developer.log('添加商品到购物车异常: $e', name: 'CartManager');
       return false;
@@ -76,6 +96,34 @@ class CartManager {
       return false;
     } catch (e) {
       developer.log('更新购物车商品数量异常: $e', name: 'CartManager');
+      return false;
+    }
+  }
+
+  // 更新购物车中商品的图片URL
+  static Future<bool> updateImageUrl(int productId, String imageUrl) async {
+    try {
+      final List<Map<String, dynamic>> cartItems = await getCartItems();
+      int index =
+          cartItems.indexWhere((item) => item['productId'] == productId);
+
+      if (index >= 0) {
+        if (imageUrl.isNotEmpty) {
+          if (imageUrl.startsWith('http://localhost:8080')) {
+            imageUrl = imageUrl.replaceFirst(
+                'http://localhost:8080', 'http://192.168.200.30:8080');
+          } else if (imageUrl.startsWith('/files/')) {
+            imageUrl = 'http://192.168.200.30:8080$imageUrl';
+          }
+        }
+
+        cartItems[index]['mainImageUrl'] = imageUrl;
+        developer.log('更新商品图片URL: $productId, $imageUrl', name: 'CartManager');
+        return await _saveCartItems(cartItems);
+      }
+      return false;
+    } catch (e) {
+      developer.log('更新商品图片URL异常: $e', name: 'CartManager');
       return false;
     }
   }
@@ -124,12 +172,18 @@ class CartManager {
 
   // 获取购物车中商品的总数量
   static Future<int> getCartItemCount() async {
-    final List<Map<String, dynamic>> cartItems = await getCartItems();
-    int count = 0;
-    for (var item in cartItems) {
-      count += (item['quantity'] as int);
+    try {
+      final List<Map<String, dynamic>> cartItems = await getCartItems();
+      int count = 0;
+      for (var item in cartItems) {
+        count += (item['quantity'] as int? ?? 0);
+      }
+      developer.log('购物车商品总数: $count', name: 'CartManager');
+      return count;
+    } catch (e) {
+      developer.log('获取购物车商品总数异常: $e', name: 'CartManager');
+      return 0; // 出错时返回0
     }
-    return count;
   }
 
   // 计算购物车中商品的总价

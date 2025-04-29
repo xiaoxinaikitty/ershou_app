@@ -256,155 +256,7 @@ class _CartPageState extends State<CartPage> {
               padding: const EdgeInsets.all(16),
               itemCount: _cartItems.length,
               itemBuilder: (context, index) {
-                final item = _cartItems[index];
-                final productId = item['productId'] as int;
-                final title = item['title'] as String;
-                final price = item['price'] as double;
-                final imageUrl = item['imageUrl'] as String?;
-                final quantity = item['quantity'] as int;
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 商品图片
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ProductDetailPage(productId: productId),
-                              ),
-                            );
-                          },
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(
-                              width: 80,
-                              height: 80,
-                              child: imageUrl != null
-                                  ? Image.network(
-                                      imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Container(
-                                          color: Colors.grey[200],
-                                          child: const Icon(
-                                            Icons.image_not_supported,
-                                            color: Colors.grey,
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : Container(
-                                      color: Colors.grey[200],
-                                      child: const Icon(
-                                        Icons.image,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-
-                        // 商品信息
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '¥${price.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-
-                              // 数量调整
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      // 减少按钮
-                                      InkWell(
-                                        onTap: () => _updateQuantity(
-                                            index, quantity - 1),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            border:
-                                                Border.all(color: Colors.grey),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: const Icon(Icons.remove,
-                                              size: 16),
-                                        ),
-                                      ),
-                                      // 数量显示
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12),
-                                        child: Text(
-                                          quantity.toString(),
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ),
-                                      // 增加按钮
-                                      InkWell(
-                                        onTap: () => _updateQuantity(
-                                            index, quantity + 1),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            border:
-                                                Border.all(color: Colors.grey),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child:
-                                              const Icon(Icons.add, size: 16),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  // 删除按钮
-                                  IconButton(
-                                    onPressed: () =>
-                                        _showDeleteConfirmDialog(index),
-                                    icon: const Icon(Icons.delete_outline),
-                                    color: Colors.grey,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                return _buildCartItem(index);
               },
             ),
           ),
@@ -458,5 +310,214 @@ class _CartPageState extends State<CartPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildCartItem(int index) {
+    final item = _cartItems[index];
+    final productId = item['productId'] as int? ?? -1;
+    final title = item['title'] as String? ?? '未命名商品';
+    final price = item['price'] ?? 0.0;
+    final quantity = item['quantity'] as int? ?? 1;
+
+    // 处理图片URL
+    String imageUrl = item['mainImageUrl'] as String? ?? '';
+    developer.log('原始图片URL: $imageUrl', name: 'CartPage');
+
+    if (imageUrl.isNotEmpty) {
+      if (imageUrl.startsWith('http://localhost:8080')) {
+        imageUrl = imageUrl.replaceFirst(
+            'http://localhost:8080', 'http://192.168.200.30:8080');
+        developer.log('转换后的图片URL: $imageUrl', name: 'CartPage');
+      } else if (imageUrl.startsWith('/files/')) {
+        imageUrl = 'http://192.168.200.30:8080$imageUrl';
+        developer.log('转换后的图片URL: $imageUrl', name: 'CartPage');
+      } else if (!imageUrl.startsWith('http')) {
+        developer.log('无效的图片URL格式: $imageUrl', name: 'CartPage');
+        imageUrl = ''; // 重置为空的URL
+      }
+    }
+
+    // 如果图片URL为空，尝试从商品详情获取
+    if (imageUrl.isEmpty) {
+      _fetchProductImage(productId).then((url) {
+        if (url.isNotEmpty) {
+          setState(() {
+            _cartItems[index]['mainImageUrl'] = url;
+            imageUrl = url; // 更新当前显示的图片URL
+          });
+          // 更新购物车中的图片URL
+          CartManager.updateImageUrl(productId, url);
+        }
+      });
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: InkWell(
+        onTap: () {
+          // 点击商品跳转到详情页，传递当前图片URL
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductDetailPage(
+                productId: productId,
+                mainImageUrl: imageUrl,
+              ),
+            ),
+          ).then((value) {
+            // 从详情页返回时，更新购物车中的图片URL
+            if (value != null && value is String) {
+              setState(() {
+                _cartItems[index]['mainImageUrl'] = value;
+              });
+            }
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              // 商品图片
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: imageUrl.isNotEmpty
+                    ? Image.network(
+                        imageUrl,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          developer.log('图片加载失败: $error', name: 'CartPage');
+                          return Container(
+                            width: 80,
+                            height: 80,
+                            color: Colors.grey[300],
+                            child: const Icon(
+                              Icons.image_not_supported,
+                              size: 30,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        width: 80,
+                        height: 80,
+                        color: Colors.grey[300],
+                        child: const Icon(
+                          Icons.image,
+                          size: 30,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 12),
+
+              // 商品信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '¥${price.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // 数量调整
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            // 减少按钮
+                            InkWell(
+                              onTap: () => _updateQuantity(index, quantity - 1),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Icon(Icons.remove, size: 16),
+                              ),
+                            ),
+                            // 数量显示
+                            Container(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                quantity.toString(),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            // 增加按钮
+                            InkWell(
+                              onTap: () => _updateQuantity(index, quantity + 1),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Icon(Icons.add, size: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // 删除按钮
+                        IconButton(
+                          onPressed: () => _showDeleteConfirmDialog(index),
+                          icon: const Icon(Icons.delete_outline),
+                          color: Colors.grey,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 从商品详情获取图片
+  Future<String> _fetchProductImage(int productId) async {
+    try {
+      final response = await HttpUtil().get('${Api.productDetail}$productId');
+      if (response.isSuccess && response.data != null) {
+        String imageUrl = response.data['mainImageUrl'] as String? ?? '';
+        if (imageUrl.isNotEmpty) {
+          if (imageUrl.startsWith('http://localhost:8080')) {
+            imageUrl = imageUrl.replaceFirst(
+                'http://localhost:8080', 'http://192.168.200.30:8080');
+          } else if (imageUrl.startsWith('/files/')) {
+            imageUrl = 'http://192.168.200.30:8080$imageUrl';
+          }
+          developer.log('从商品详情获取到图片URL: $imageUrl', name: 'CartPage');
+          return imageUrl;
+        }
+      }
+    } catch (e) {
+      developer.log('获取商品图片异常: $e', name: 'CartPage');
+    }
+    return '';
   }
 }

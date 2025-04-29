@@ -458,7 +458,10 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductDetailPage(productId: productId),
+              builder: (context) => ProductDetailPage(
+                productId: productId,
+                mainImageUrl: imageUrl, // 传递主图URL
+              ),
             ),
           );
         },

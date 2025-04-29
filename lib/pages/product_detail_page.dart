@@ -7,9 +7,13 @@ import '../utils/cart_manager.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final int productId;
+  final String? mainImageUrl; // 添加主图URL参数
 
-  const ProductDetailPage({Key? key, required this.productId})
-      : super(key: key);
+  const ProductDetailPage({
+    Key? key,
+    required this.productId,
+    this.mainImageUrl, // 添加主图URL参数
+  }) : super(key: key);
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -20,10 +24,33 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _isError = false;
   String _errorMessage = '';
   Map<String, dynamic>? _productData;
+  List<String> _imageUrls = [];
 
   @override
   void initState() {
     super.initState();
+    // 如果有传入的主图URL，先添加到图片列表
+    if (widget.mainImageUrl != null && widget.mainImageUrl!.isNotEmpty) {
+      String url = widget.mainImageUrl!;
+      developer.log('初始主图URL: $url', name: 'ProductDetailPage');
+
+      if (url.startsWith('http://localhost:8080')) {
+        url = url.replaceFirst(
+            'http://localhost:8080', 'http://192.168.200.30:8080');
+        developer.log('转换后的主图URL: $url', name: 'ProductDetailPage');
+      } else if (url.startsWith('/files/')) {
+        url = 'http://192.168.200.30:8080$url';
+        developer.log('转换后的主图URL: $url', name: 'ProductDetailPage');
+      } else if (!url.startsWith('http')) {
+        developer.log('无效的主图URL格式: $url', name: 'ProductDetailPage');
+        url = '';
+      }
+
+      if (url.isNotEmpty) {
+        _imageUrls.add(url);
+        developer.log('添加主图URL到列表: $url', name: 'ProductDetailPage');
+      }
+    }
     _fetchProductDetail();
   }
 
@@ -36,23 +63,87 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
 
     try {
-      final response =
+      // 获取商品详情
+      final detailResponse =
           await HttpUtil().get('${Api.productDetail}${widget.productId}');
 
-      if (response.isSuccess && response.data != null) {
+      if (detailResponse.isSuccess && detailResponse.data != null) {
         setState(() {
-          _productData = response.data as Map<String, dynamic>;
-          _isLoading = false;
+          _productData = detailResponse.data as Map<String, dynamic>;
         });
         developer.log('获取商品详情成功: ${_productData?.toString()}',
             name: 'ProductDetailPage');
+
+        // 获取商品图片列表
+        try {
+          final imageResponse =
+              await HttpUtil().get('${Api.imageList}${widget.productId}');
+          developer.log('图片列表API响应: ${imageResponse.toString()}',
+              name: 'ProductDetailPage');
+
+          if (imageResponse.isSuccess && imageResponse.data != null) {
+            final images = imageResponse.data as List<dynamic>;
+            developer.log('解析到的图片数据: $images', name: 'ProductDetailPage');
+
+            setState(() {
+              _imageUrls = images
+                  .map((img) {
+                    String url = img['url'] as String? ?? '';
+                    developer.log('处理图片URL: $url', name: 'ProductDetailPage');
+
+                    if (url.isNotEmpty) {
+                      if (url.startsWith('http://localhost:8080')) {
+                        url = url.replaceFirst('http://localhost:8080',
+                            'http://192.168.200.30:8080');
+                      } else if (url.startsWith('/files/')) {
+                        url = 'http://192.168.200.30:8080$url';
+                      }
+                    }
+                    return url;
+                  })
+                  .where((url) => url.isNotEmpty)
+                  .toList();
+            });
+          } else {
+            developer.log('图片列表API失败，尝试从商品详情获取图片', name: 'ProductDetailPage');
+            // 从商品详情中获取图片
+            if (_productData?['mainImageUrl'] != null) {
+              String url = _productData?['mainImageUrl'] as String;
+              if (url.isNotEmpty) {
+                if (url.startsWith('http://localhost:8080')) {
+                  url = url.replaceFirst(
+                      'http://localhost:8080', 'http://192.168.200.30:8080');
+                } else if (url.startsWith('/files/')) {
+                  url = 'http://192.168.200.30:8080$url';
+                }
+                _imageUrls.add(url);
+              }
+            }
+          }
+
+          setState(() {
+            _isLoading = false;
+            if (_imageUrls.isEmpty) {
+              _isError = true;
+              _errorMessage = '该商品暂无图片';
+            }
+          });
+          developer.log('最终图片URL列表: $_imageUrls', name: 'ProductDetailPage');
+        } catch (e) {
+          setState(() {
+            _isLoading = false;
+            _isError = true;
+            _errorMessage = '获取商品图片异常: $e';
+          });
+          developer.log('获取商品图片异常: $e', name: 'ProductDetailPage');
+        }
       } else {
         setState(() {
           _isLoading = false;
           _isError = true;
-          _errorMessage = response.message ?? '获取商品详情失败';
+          _errorMessage = detailResponse.message ?? '获取商品详情失败';
         });
-        developer.log('获取商品详情失败: ${response.message}',
+        developer.log('获取商品详情失败: ${detailResponse.message}',
             name: 'ProductDetailPage');
       }
     } catch (e) {
@@ -174,304 +265,313 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final createdTime = _productData?['createdTime'] as String? ?? '';
     final viewCount = _productData?['viewCount'] as int? ?? 0;
 
-    // 处理图片URL
-    List<String> imageUrls = [];
-    if (_productData?['images'] != null) {
-      final images = _productData?['images'] as List<dynamic>;
-      imageUrls = images
-          .map((img) {
-            String url = img['url'] as String? ?? '';
-            if (url.startsWith('http://localhost:8080')) {
-              url = url.replaceFirst(
-                  'http://localhost:8080', 'http://192.168.200.30:8080');
-            } else if (url.startsWith('/files/')) {
-              url = 'http://192.168.200.30:8080$url';
-            }
-            return url;
-          })
-          .toList()
-          .cast<String>();
-    } else if (_productData?['mainImageUrl'] != null) {
-      String url = _productData?['mainImageUrl'] as String;
-      if (url.startsWith('http://localhost:8080')) {
-        url = url.replaceFirst(
-            'http://localhost:8080', 'http://192.168.200.30:8080');
-      } else if (url.startsWith('/files/')) {
-        url = 'http://192.168.200.30:8080$url';
-      }
-      imageUrls.add(url);
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('商品详情'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {
-              // 分享功能
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('分享功能开发中')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 主体内容（可滚动）
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 商品图片轮播
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: imageUrls.isNotEmpty
-                        ? PageView.builder(
-                            itemCount: imageUrls.length,
-                            itemBuilder: (context, index) {
-                              return Image.network(
-                                imageUrls[index],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: Colors.grey[300],
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                      size: 60,
-                                      color: Colors.white,
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          )
-                        : Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.image,
-                              size: 60,
-                              color: Colors.white,
+    return WillPopScope(
+      onWillPop: () async {
+        // 返回时更新购物车中的图片URL
+        String currentImageUrl =
+            _imageUrls.isNotEmpty ? _imageUrls[0] : widget.mainImageUrl ?? '';
+        if (currentImageUrl.isNotEmpty) {
+          await CartManager.updateImageUrl(widget.productId, currentImageUrl);
+        }
+        Navigator.of(context).pop(currentImageUrl);
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('商品详情'),
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: () {
+                // 分享功能
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('分享功能开发中')),
+                );
+              },
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // 主体内容（可滚动）
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 商品图片轮播
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: _imageUrls.isNotEmpty
+                          ? PageView.builder(
+                              itemCount: _imageUrls.length,
+                              itemBuilder: (context, index) {
+                                return Image.network(
+                                  _imageUrls[index],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(
+                                        Icons.image_not_supported,
+                                        size: 60,
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            )
+                          : Container(
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.image,
+                                size: 60,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                  ),
+                    ),
 
-                  // 商品基本信息
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 20,
+                    // 商品基本信息
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Text(
+                                '¥${price.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (originalPrice > 0 && originalPrice > price)
+                                Text(
+                                  '¥${originalPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on,
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                location,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                              const Spacer(),
+                              const Icon(Icons.remove_red_eye,
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$viewCount浏览',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time,
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                '发布时间: $createdTime',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.person,
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                '发布者: $username',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 16),
+
+                          // 商品成色
+                          Row(
+                            children: [
+                              const Text(
+                                '商品成色: ',
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Text(
-                              '¥${price.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (originalPrice > 0 && originalPrice > price)
-                              Text(
-                                '¥${originalPrice.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey,
-                                  fontSize: 16,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on,
-                                size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Text(
-                              location,
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.remove_red_eye,
-                                size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$viewCount浏览',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.access_time,
-                                size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Text(
-                              '发布时间: $createdTime',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.person,
-                                size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Text(
-                              '发布者: $username',
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const Divider(),
-                        const SizedBox(height: 16),
-
-                        // 商品成色
-                        Row(
-                          children: [
-                            const Text(
-                              '商品成色: ',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text('$conditionLevel成新'),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // 商品描述
-                        const Text(
-                          '商品描述',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                              Text('$conditionLevel成新'),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          description,
-                          style: const TextStyle(
-                            fontSize: 14,
+                          const SizedBox(height: 16),
+
+                          // 商品描述
+                          const Text(
+                            '商品描述',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 100), // 底部留空，避免被底部按钮遮挡
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            description,
+                            style: const TextStyle(
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 100), // 底部留空，避免被底部按钮遮挡
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 底部固定操作栏
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // 收藏按钮
+                  IconButton(
+                    icon: const Icon(Icons.favorite_border),
+                    onPressed: _addToFavorite,
+                    tooltip: '收藏',
+                    color: Colors.grey,
+                  ),
+                  // 客服按钮
+                  IconButton(
+                    icon: const Icon(Icons.message),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('联系客服功能开发中')),
+                      );
+                    },
+                    tooltip: '联系客服',
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  // 加入购物车按钮
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (_productData != null) {
+                          // 确保有图片URL
+                          String mainImageUrl = '';
+                          if (_imageUrls.isNotEmpty) {
+                            mainImageUrl = _imageUrls[0]; // 使用第一张图片作为主图
+                          } else if (_productData!['mainImageUrl'] != null) {
+                            mainImageUrl =
+                                _productData!['mainImageUrl'] as String;
+                          }
+
+                          // 创建要添加到购物车的数据
+                          final cartData = {
+                            'productId': _productData!['productId'],
+                            'title': _productData!['title'],
+                            'price': _productData!['price'],
+                            'mainImageUrl': mainImageUrl,
+                          };
+
+                          developer.log('添加到购物车的数据: $cartData',
+                              name: 'ProductDetailPage');
+                          final result = await CartManager.addToCart(cartData);
+
+                          if (!mounted) return;
+
+                          if (result) {
+                            // 获取更新后的购物车数量
+                            final count = await CartManager.getCartItemCount();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('已加入购物车 (${count}件)'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+
+                            // 通知底部导航栏更新购物车数量
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
+                              Navigator.pushNamed(context, '/');
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('加入购物车失败，请重试')),
+                            );
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('商品数据加载失败，请重试')),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                      ),
+                      child: const Text('加入购物车'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // 立即购买按钮
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _createOrder,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                      ),
+                      child: const Text('立即购买'),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-
-          // 底部固定操作栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // 收藏按钮
-                IconButton(
-                  icon: const Icon(Icons.favorite_border),
-                  onPressed: _addToFavorite,
-                  tooltip: '收藏',
-                  color: Colors.grey,
-                ),
-                // 客服按钮
-                IconButton(
-                  icon: const Icon(Icons.message),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('联系客服功能开发中')),
-                    );
-                  },
-                  tooltip: '联系客服',
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 8),
-                // 加入购物车按钮
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (_productData != null) {
-                        final result =
-                            await CartManager.addToCart(_productData!);
-                        if (!mounted) return;
-
-                        if (result) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('已加入购物车')),
-                          );
-
-                          // 通知底部导航栏更新购物车数量
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            Navigator.pushNamed(context, '/');
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('加入购物车失败，请重试')),
-                          );
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('商品数据加载失败，请重试')),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                    ),
-                    child: const Text('加入购物车'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 立即购买按钮
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _createOrder,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                    ),
-                    child: const Text('立即购买'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
