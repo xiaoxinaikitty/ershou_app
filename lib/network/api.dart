@@ -8,10 +8,22 @@ class Api {
   static const String userLogin = '/user/login'; // 用户登录
   static const String adminLogin = '/user/admin'; // 管理员登录
   static const String userAddress = '/user/address'; // 添加用户地址
+  static const String userAddressByUser =
+      '/user/address/addByUser'; // 根据用户ID添加地址
+  static const String userAddressList = '/user/address/list'; // 获取用户地址列表
+  static const String userAddressDelete =
+      '/user/address/delete/'; // 删除收货地址，需附加addressId
   static const String userInfo = '/user/info'; // 获取/修改用户信息
   static const String userPassword = '/user/password'; // 修改用户密码
   static const String userRole = '/user/role'; // 获取用户角色信息
   static const String userProducts = '/user/products'; // 获取用户发布的商品列表
+
+  // 发货地址模块
+  static const String shippingAddressAdd = '/shipping/address/add'; // 添加发货地址
+  static const String shippingAddressList =
+      '/shipping/address/list'; // 获取发货地址列表
+  static const String shippingAddressDelete =
+      '/shipping/address/delete/'; // 删除发货地址，需附加addressId
 
   // 文件上传
   static const String fileUpload = '/file/upload'; // 文件上传

@@ -14,6 +14,8 @@ import 'wallet_page.dart'; // 导入钱包页面
 import 'cart_page.dart'; // 导入购物车页面
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import './address_management_page.dart' as address; // 使用别名导入地址管理页面
+import './shipping_address_page.dart'; // 导入发货地址管理页面
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -741,7 +743,9 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Column(
         children: [
-          _buildFeatureItem(Icons.location_on, '我的地址'),
+          _buildFeatureItem(Icons.location_on, '我的收货地址'),
+          const Divider(height: 1),
+          _buildFeatureItem(Icons.local_shipping, '我的发货地址'),
           const Divider(height: 1),
           _buildFeatureItem(Icons.support, '联系客服'),
           const Divider(height: 1),
@@ -760,6 +764,21 @@ class _ProfilePageState extends State<ProfilePage> {
       trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
       onTap: () {
         // 处理点击事件
+        if (title == '我的收货地址') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const address.AddressManagementPage(),
+            ),
+          );
+        } else if (title == '我的发货地址') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ShippingAddressPage(),
+            ),
+          );
+        }
       },
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
 import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
@@ -12,7 +13,15 @@ class AddressManagementPage extends StatefulWidget {
 
 class _AddressManagementPageState extends State<AddressManagementPage> {
   bool _isLoading = true;
+  bool _isError = false;
+  String _errorMessage = '';
   List<Map<String, dynamic>> _addresses = [];
+
+  // 表单控制器
+  final TextEditingController _consigneeController = TextEditingController();
+  final TextEditingController _regionController = TextEditingController();
+  final TextEditingController _detailController = TextEditingController();
+  final TextEditingController _contactPhoneController = TextEditingController();
 
   @override
   void initState() {
@@ -20,170 +29,281 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
     _fetchAddresses();
   }
 
+  @override
+  void dispose() {
+    _consigneeController.dispose();
+    _regionController.dispose();
+    _detailController.dispose();
+    _contactPhoneController.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetchAddresses() async {
     setState(() {
       _isLoading = true;
+      _isError = false;
+      _errorMessage = '';
     });
 
     try {
-      // 假设有获取地址列表的API
-      // final response = await HttpUtil().get(Api.userAddressList);
+      // 使用真实的API获取地址列表
+      final response = await HttpUtil().get(Api.userAddressList);
 
-      // 由于API暂未提供，先使用模拟数据
-      await Future.delayed(const Duration(seconds: 1));
-      final mockAddresses = [
-        {
-          'id': 1,
-          'name': '张三',
-          'phone': '13800138000',
-          'province': '北京市',
-          'city': '北京市',
-          'district': '海淀区',
-          'detailAddress': '中关村大街1号',
-          'isDefault': true,
-        },
-        {
-          'id': 2,
-          'name': '李四',
-          'phone': '13900139000',
-          'province': '上海市',
-          'city': '上海市',
-          'district': '徐汇区',
-          'detailAddress': '漕河泾开发区',
-          'isDefault': false,
-        },
-      ];
-
-      setState(() {
-        _addresses = mockAddresses;
-        _isLoading = false;
-      });
-
-      /*
       if (response.isSuccess && response.data != null) {
+        final List<dynamic> addressData = response.data;
+
         setState(() {
-          _addresses = (response.data as List).cast<Map<String, dynamic>>();
+          _addresses =
+              addressData.map((item) => item as Map<String, dynamic>).toList();
           _isLoading = false;
         });
+
+        developer.log('获取地址列表成功: ${_addresses.length}',
+            name: 'AddressManagementPage');
       } else {
         setState(() {
           _isLoading = false;
+          _isError = true;
+          _errorMessage = response.message ?? '获取地址列表失败';
         });
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('获取地址列表失败')),
-          );
-        }
+
+        developer.log('获取地址列表失败: ${response.message}',
+            name: 'AddressManagementPage');
       }
-      */
     } catch (e) {
       setState(() {
         _isLoading = false;
+        _isError = true;
+        _errorMessage = '网络错误，请稍后再试';
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('网络错误，请稍后再试')),
-        );
-      }
+      developer.log('获取地址列表异常: $e', name: 'AddressManagementPage', error: e);
     }
   }
 
-  Future<void> _deleteAddress(int addressId) async {
+  // 添加新地址
+  Future<void> _addAddress({
+    required String consignee,
+    required String region,
+    required String detail,
+    required String contactPhone,
+    required bool isDefault,
+  }) async {
     try {
-      // 假设有删除地址的API
-      // final response = await HttpUtil().delete('${Api.userAddress}/$addressId');
+      final response = await HttpUtil().post(
+        Api.userAddressByUser,
+        data: {
+          'consignee': consignee,
+          'region': region,
+          'detail': detail,
+          'contactPhone': contactPhone,
+          'isDefault': isDefault,
+        },
+      );
 
-      // 由于API暂未提供，先使用模拟数据
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      setState(() {
-        _addresses.removeWhere((address) => address['id'] == addressId);
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('地址删除成功')),
-        );
-      }
-
-      /*
       if (response.isSuccess) {
-        setState(() {
-          _addresses.removeWhere((address) => address['id'] == addressId);
-        });
-        
+        // 添加成功后刷新列表
+        await _fetchAddresses();
+        // 清空表单
+        _resetForm();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('地址删除成功')),
+            const SnackBar(
+              content: Text('地址添加成功'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
+        developer.log('地址添加成功', name: 'AddressManagementPage');
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response.message ?? '删除失败')),
+            SnackBar(
+              content: Text(response.message ?? '地址添加失败'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
+        developer.log('地址添加失败: ${response.message}',
+            name: 'AddressManagementPage');
       }
-      */
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('网络错误，请稍后再试')),
+          SnackBar(
+            content: Text('地址添加失败: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
+      developer.log('地址添加异常: $e', name: 'AddressManagementPage', error: e);
+    }
+  }
+
+  // 重置表单
+  void _resetForm() {
+    _consigneeController.clear();
+    _regionController.clear();
+    _detailController.clear();
+    _contactPhoneController.clear();
+  }
+
+  // 当前API不支持删除地址和设置默认地址的操作，保留方法以备后续实现
+  Future<void> _deleteAddress(int addressId) async {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('暂不支持删除地址功能'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
   Future<void> _setDefaultAddress(int addressId) async {
-    try {
-      // 假设有设置默认地址的API
-      // final response = await HttpUtil().put('${Api.userAddress}/default/$addressId');
-
-      // 由于API暂未提供，先使用模拟数据
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      setState(() {
-        for (var address in _addresses) {
-          address['isDefault'] = address['id'] == addressId;
-        }
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('默认地址设置成功')),
-        );
-      }
-
-      /*
-      if (response.isSuccess) {
-        setState(() {
-          for (var address in _addresses) {
-            address['isDefault'] = address['id'] == addressId;
-          }
-        });
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('默认地址设置成功')),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response.message ?? '设置失败')),
-          );
-        }
-      }
-      */
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('网络错误，请稍后再试')),
-        );
-      }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('暂不支持修改默认地址功能'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
+  }
+
+  // 显示添加地址对话框
+  void _showAddAddressDialog() {
+    bool isDefault = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('添加收货地址'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: _consigneeController,
+                      decoration: const InputDecoration(
+                        labelText: '收货人',
+                        hintText: '请输入收货人姓名',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _regionController,
+                      decoration: const InputDecoration(
+                        labelText: '所在地区',
+                        hintText: '请输入所在地区',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _detailController,
+                      decoration: const InputDecoration(
+                        labelText: '详细地址',
+                        hintText: '请输入详细地址',
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _contactPhoneController,
+                      decoration: const InputDecoration(
+                        labelText: '联系电话',
+                        hintText: '请输入联系电话',
+                      ),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Text('设为默认地址'),
+                        const Spacer(),
+                        Switch(
+                          value: isDefault,
+                          activeColor: AppTheme.primaryColor,
+                          onChanged: (value) {
+                            setState(() {
+                              isDefault = value;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('取消'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // 表单验证
+                    if (_consigneeController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('请输入收货人姓名')),
+                      );
+                      return;
+                    }
+                    if (_regionController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('请输入所在地区')),
+                      );
+                      return;
+                    }
+                    if (_detailController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('请输入详细地址')),
+                      );
+                      return;
+                    }
+                    if (_contactPhoneController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('请输入联系电话')),
+                      );
+                      return;
+                    }
+
+                    // 电话号码格式验证
+                    final phoneRegExp = RegExp(r'^1[3-9]\d{9}$');
+                    if (!phoneRegExp
+                        .hasMatch(_contactPhoneController.text.trim())) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('请输入有效的手机号码')),
+                      );
+                      return;
+                    }
+
+                    // 关闭对话框
+                    Navigator.of(context).pop();
+
+                    // 添加地址
+                    _addAddress(
+                      consignee: _consigneeController.text.trim(),
+                      region: _regionController.text.trim(),
+                      detail: _detailController.text.trim(),
+                      contactPhone: _contactPhoneController.text.trim(),
+                      isDefault: isDefault,
+                    );
+                  },
+                  child: const Text('确定'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -196,24 +316,41 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _addresses.isEmpty
-              ? _buildEmptyView()
-              : _buildAddressList(),
+          : _isError
+              ? _buildErrorView()
+              : _addresses.isEmpty
+                  ? _buildEmptyView()
+                  : _buildAddressList(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddressEditPage(),
-            ),
-          ).then((value) {
-            if (value == true) {
-              _fetchAddresses();
-            }
-          });
-        },
+        onPressed: _showAddAddressDialog,
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 60,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _errorMessage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _fetchAddresses,
+            child: const Text('重新加载'),
+          ),
+        ],
       ),
     );
   }
@@ -223,34 +360,20 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.location_off,
-            size: 64,
-            color: Colors.grey[400],
+            size: 60,
+            color: Colors.grey,
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             '暂无收货地址',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddressEditPage(),
-                ),
-              ).then((value) {
-                if (value == true) {
-                  _fetchAddresses();
-                }
-              });
-            },
-            child: const Text('添加地址'),
+            onPressed: _showAddAddressDialog,
+            child: const Text('添加收货地址'),
           ),
         ],
       ),
@@ -263,147 +386,80 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
       itemCount: _addresses.length,
       itemBuilder: (context, index) {
         final address = _addresses[index];
-        final isDefault = address['isDefault'] as bool;
+        final bool isDefault = address['isDefault'] ?? false;
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-                color: isDefault ? AppTheme.primaryColor : Colors.transparent),
+            side: isDefault
+                ? BorderSide(color: AppTheme.primaryColor, width: 2)
+                : BorderSide.none,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 姓名和电话
                 Row(
                   children: [
                     Text(
-                      address['name'] as String,
+                      address['consignee'] ?? '',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Text(
-                      address['phone'] as String,
-                      style: TextStyle(color: Colors.grey[700]),
+                      address['contactPhone'] ?? '',
+                      style: TextStyle(color: Colors.grey[600]),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                // 地址
-                Text(
-                  '${address['province']} ${address['city']} ${address['district']} ${address['detailAddress']}',
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
-                const SizedBox(height: 16),
-
-                // 底部操作栏
-                Row(
-                  children: [
-                    // 默认地址标记
+                    const Spacer(),
                     if (isDefault)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              size: 14,
-                              color: AppTheme.primaryColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '默认地址',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      TextButton(
-                        onPressed: () =>
-                            _setDefaultAddress(address['id'] as int),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text('设为默认'),
-                      ),
-
-                    const Spacer(),
-
-                    // 编辑按钮
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                AddressEditPage(address: address),
+                          border: Border.all(
+                            color: AppTheme.primaryColor,
+                            width: 1,
                           ),
-                        ).then((value) {
-                          if (value == true) {
-                            _fetchAddresses();
-                          }
-                        });
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text('编辑'),
-                    ),
-
-                    const SizedBox(width: 16),
-
-                    // 删除按钮
-                    TextButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('删除地址'),
-                            content: const Text('确定要删除这个地址吗？'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('取消'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _deleteAddress(address['id'] as int);
-                                },
-                                child: const Text('确定',
-                                    style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
+                        ),
+                        child: Text(
+                          '默认',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.primaryColor,
                           ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        foregroundColor: Colors.red,
+                        ),
                       ),
-                      child: const Text('删除'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${address['region'] ?? ''} ${address['detail'] ?? ''}',
+                  style: TextStyle(
+                    color: Colors.grey[800],
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // 注意：目前API不支持这些操作，所以禁用
+                    Text(
+                      '暂不支持编辑和删除功能',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ),
@@ -412,291 +468,6 @@ class _AddressManagementPageState extends State<AddressManagementPage> {
           ),
         );
       },
-    );
-  }
-}
-
-class AddressEditPage extends StatefulWidget {
-  final Map<String, dynamic>? address;
-
-  const AddressEditPage({Key? key, this.address}) : super(key: key);
-
-  @override
-  State<AddressEditPage> createState() => _AddressEditPageState();
-}
-
-class _AddressEditPageState extends State<AddressEditPage> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nameController;
-  late final TextEditingController _phoneController;
-  late final TextEditingController _provinceController;
-  late final TextEditingController _cityController;
-  late final TextEditingController _districtController;
-  late final TextEditingController _detailAddressController;
-  bool _isDefault = false;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // 初始化控制器，如果是编辑模式则填充现有地址信息
-    final address = widget.address;
-    _nameController =
-        TextEditingController(text: address?['name'] as String? ?? '');
-    _phoneController =
-        TextEditingController(text: address?['phone'] as String? ?? '');
-    _provinceController =
-        TextEditingController(text: address?['province'] as String? ?? '');
-    _cityController =
-        TextEditingController(text: address?['city'] as String? ?? '');
-    _districtController =
-        TextEditingController(text: address?['district'] as String? ?? '');
-    _detailAddressController =
-        TextEditingController(text: address?['detailAddress'] as String? ?? '');
-    _isDefault = address?['isDefault'] as bool? ?? false;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _provinceController.dispose();
-    _cityController.dispose();
-    _districtController.dispose();
-    _detailAddressController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveAddress() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final addressData = {
-        'name': _nameController.text,
-        'phone': _phoneController.text,
-        'province': _provinceController.text,
-        'city': _cityController.text,
-        'district': _districtController.text,
-        'detailAddress': _detailAddressController.text,
-        'isDefault': _isDefault,
-      };
-
-      if (widget.address != null) {
-        addressData['id'] = widget.address!['id'];
-      }
-
-      // 假设有保存地址的API
-      // final response = await HttpUtil().post(Api.userAddress, data: addressData);
-
-      // 由于API暂未提供，先使用模拟数据
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('地址${widget.address != null ? "修改" : "添加"}成功')),
-      );
-      Navigator.pop(context, true);
-
-      /*
-      if (response.isSuccess) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('地址${widget.address != null ? "修改" : "添加"}成功')),
-        );
-        Navigator.pop(context, true);
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.message ?? '保存失败')),
-        );
-      }
-      */
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('网络错误，请稍后再试')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isEdit = widget.address != null;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          isEdit ? '编辑收货地址' : '新增收货地址',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        elevation: 0,
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // 收货人
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: '收货人',
-                hintText: '请输入收货人姓名',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入收货人姓名';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 手机号码
-            TextFormField(
-              controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: '手机号码',
-                hintText: '请输入手机号码',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.phone,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入手机号码';
-                }
-                if (value.length != 11 ||
-                    !RegExp(r'^1\d{10}$').hasMatch(value)) {
-                  return '请输入有效的手机号码';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 省份
-            TextFormField(
-              controller: _provinceController,
-              decoration: const InputDecoration(
-                labelText: '省份',
-                hintText: '请输入省份',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入省份';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 城市
-            TextFormField(
-              controller: _cityController,
-              decoration: const InputDecoration(
-                labelText: '城市',
-                hintText: '请输入城市',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入城市';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 区/县
-            TextFormField(
-              controller: _districtController,
-              decoration: const InputDecoration(
-                labelText: '区/县',
-                hintText: '请输入区/县',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入区/县';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // 详细地址
-            TextFormField(
-              controller: _detailAddressController,
-              decoration: const InputDecoration(
-                labelText: '详细地址',
-                hintText: '请输入详细地址，如街道、小区、门牌号等',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入详细地址';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // 设为默认地址
-            Row(
-              children: [
-                Checkbox(
-                  value: _isDefault,
-                  activeColor: AppTheme.primaryColor,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _isDefault = value;
-                      });
-                    }
-                  },
-                ),
-                const Text('设为默认收货地址'),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // 保存按钮
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveAddress,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('保存'),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

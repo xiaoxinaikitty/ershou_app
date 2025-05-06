@@ -483,22 +483,13 @@ class _LocalPageState extends State<LocalPage> {
     final username = product['username'] as String? ?? '未知用户';
 
     String imageUrl = product['mainImageUrl'] as String? ?? '';
-    developer.log('原始图片URL: $imageUrl', name: 'LocalPage');
-
     if (imageUrl.isNotEmpty) {
       if (imageUrl.startsWith('http://localhost:8080')) {
         imageUrl = imageUrl.replaceFirst(
             'http://localhost:8080', 'http://192.168.200.30:8080');
-      } else if (imageUrl.startsWith('localhost:8080')) {
-        imageUrl =
-            imageUrl.replaceFirst('localhost:8080', '192.168.200.30:8080');
       } else if (imageUrl.startsWith('/files/')) {
         imageUrl = 'http://192.168.200.30:8080$imageUrl';
-      } else if (!imageUrl.startsWith('http://') &&
-          !imageUrl.startsWith('https://')) {
-        imageUrl = 'http://192.168.200.30:8080$imageUrl';
       }
-      developer.log('处理后的图片URL: $imageUrl', name: 'LocalPage');
     }
 
     return Card(
@@ -532,25 +523,12 @@ class _LocalPageState extends State<LocalPage> {
                         imageUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          developer.log('图片加载错误: $error\n$stackTrace',
-                              name: 'LocalPage');
                           return Container(
                             color: Colors.grey[300],
                             child: const Icon(
                               Icons.image_not_supported,
                               size: 40,
                               color: Colors.white,
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
                             ),
                           );
                         },
