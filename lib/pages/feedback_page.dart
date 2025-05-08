@@ -7,6 +7,7 @@ import 'feedback_detail_page.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../network/http_util.dart';
+import 'feedback_reply_page.dart';
 
 class FeedbackPage extends StatefulWidget {
   const FeedbackPage({Key? key}) : super(key: key);
@@ -26,6 +27,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
   bool _isLoadingMore = false;
   int _retryCount = 0;
   final int _maxRetries = 2;
+  bool _hasUnreadReplies = false;
 
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _picker = ImagePicker();
@@ -35,6 +37,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
     super.initState();
     _loadFeedbacks();
     _scrollController.addListener(_scrollListener);
+    _checkUnreadReplies();
   }
 
   @override
@@ -554,12 +557,78 @@ class _FeedbackPageState extends State<FeedbackPage> {
   // 用于在图片选择器状态更新时使用
   late StateSetter selectedImagesSetState;
 
+  Future<void> _checkUnreadReplies() async {
+    try {
+      // 获取已处理的反馈列表
+      final feedbacks = await _feedbackService.getUserFeedbacks(
+        pageNum: 1,
+        pageSize: 50, // 获取更多数据以确保不会遗漏
+        status: 2, // 只获取已处理的反馈
+      );
+      
+      // 检查是否有未读的回复
+      final hasUnread = feedbacks.any((feedback) => 
+        feedback.status == 2 && // 已处理
+        feedback.adminReply != null && // 有管理员回复
+        feedback.adminReply!.isNotEmpty); // 回复内容不为空
+      
+      if (mounted) {
+        setState(() {
+          _hasUnreadReplies = hasUnread;
+        });
+      }
+    } catch (e) {
+      developer.log('检查未读回复异常: $e', name: 'FeedbackPage', error: e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('用户反馈'),
         elevation: 0,
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.message_outlined),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FeedbackReplyPage(),
+                    ),
+                  ).then((_) => _checkUnreadReplies());
+                },
+              ),
+              if (_hasUnreadReplies)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: const Text(
+                      '1',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
