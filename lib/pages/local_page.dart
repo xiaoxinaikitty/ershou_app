@@ -186,7 +186,7 @@ class _LocalPageState extends State<LocalPage> {
         'pageNum': _newestPageNum,
         'pageSize': _pageSize,
         'status': 1,
-        'sortField': 'createTime',
+        'sortField': 'time',
         'sortOrder': 'desc',
       };
 

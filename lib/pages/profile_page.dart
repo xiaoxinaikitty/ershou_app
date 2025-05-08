@@ -16,6 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import './address_management_page.dart' as address; // 使用别名导入地址管理页面
 import './shipping_address_page.dart'; // 导入发货地址管理页面
+import 'feedback_page.dart'; // 导入反馈页面
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -681,8 +682,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildOrderItem(Icons.payment, '待付款'),
               _buildOrderItem(Icons.local_shipping, '待发货'),
               _buildOrderItem(Icons.inventory_2, '待收货'),
-              _buildOrderItem(Icons.rate_review, '待评价'),
-              _buildOrderItem(Icons.support_agent, '售后'),
+              _buildOrderItem(Icons.feedback, '用户反馈'),
             ],
           ),
         ],
@@ -713,6 +713,13 @@ class _ProfilePageState extends State<ProfilePage> {
             context,
             MaterialPageRoute(
               builder: (context) => const OrderReceivingPage(),
+            ),
+          );
+        } else if (title == '用户反馈') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FeedbackPage(),
             ),
           );
         }

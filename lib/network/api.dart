@@ -1,7 +1,7 @@
 /// API接口管理类
 class Api {
   // 基础URL
-  static const String baseUrl = 'http://192.168.0.103:8080';
+  static const String baseUrl = 'http://192.168.200.30:8080';
 
   // 用户模块
   static const String userRegister = '/user/register'; // 用户注册
@@ -89,4 +89,11 @@ class Api {
       '/api/wallet/payment-password/send-reset-code'; // 发送重置支付密码验证码
   static const String paymentPasswordReset =
       '/api/wallet/payment-password/reset'; // 重置支付密码
+
+  // 用户反馈模块
+  static const String feedbackAdd = '/feedback/submit'; // 添加用户反馈
+  static const String feedbackList = '/feedback/list'; // 获取用户反馈列表
+  static const String feedbackDetail =
+      '/feedback/detail/'; // 获取反馈详情，需附加feedbackId
+  static const String feedbackListByUser = '/feedback/my-list'; // 获取当前用户的反馈列表
 }
