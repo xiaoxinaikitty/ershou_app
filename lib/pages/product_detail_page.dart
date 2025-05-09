@@ -4,6 +4,7 @@ import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart';
+import 'chat/message_page.dart'; // 导入消息页面
 
 class ProductDetailPage extends StatefulWidget {
   final int productId;
@@ -214,6 +215,44 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         const SnackBar(content: Text('网络错误，请稍后再试')),
       );
     }
+  }
+
+  // 联系客服（联系商品发布者）
+  void _contactSeller() {
+    if (_productData == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('商品信息加载失败，请重试')),
+      );
+      return;
+    }
+
+    final int sellerId = _productData!['userId'] as int? ?? 0;
+    final String sellerName = _productData!['username'] as String? ?? '卖家';
+    final String productTitle = _productData!['title'] as String? ?? '商品详情';
+    final String productImage = _imageUrls.isNotEmpty
+        ? _imageUrls[0]
+        : (_productData!['mainImageUrl'] as String? ?? '');
+
+    if (sellerId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法获取卖家信息，请重试')),
+      );
+      return;
+    }
+
+    // 跳转到消息页面
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MessagePage(
+          productId: widget.productId,
+          receiverId: sellerId,
+          productTitle: productTitle,
+          receiverName: sellerName,
+          productImage: productImage,
+        ),
+      ),
+    );
   }
 
   @override
@@ -486,11 +525,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   // 客服按钮
                   IconButton(
                     icon: const Icon(Icons.message),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('联系客服功能开发中')),
-                      );
-                    },
+                    onPressed: _contactSeller,
                     tooltip: '联系客服',
                     color: Colors.grey,
                   ),

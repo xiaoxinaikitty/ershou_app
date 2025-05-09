@@ -67,8 +67,25 @@ class Api {
       '/order/notify-shipment'; // 通知收货（发货）
   static const String orderConfirmReceipt = '/order/confirm-receipt'; // 确认收货
 
-  // 消息模块
-  static const String messageSend = '/message/send'; // 发送消息
+  // 订单消息模块
+  static const String messageSend = '/message/send'; // 发送订单消息
+
+  // 用户消息模块 (联系客服)
+  static const String userMessageSend = '/user/message/send'; // 发送用户消息
+  static const String userMessageListByProduct =
+      '/user/message/list/product/'; // 获取商品相关消息列表，需附加productId
+  static const String userMessageListByConversation =
+      '/user/message/list/conversation/'; // 获取会话消息列表，需附加conversationId
+  static const String userConversations =
+      '/user/message/conversations/user'; // 获取用户的会话列表
+  static const String sellerConversations =
+      '/user/message/conversations/seller'; // 获取卖家的会话列表
+  static const String markMessageRead =
+      '/user/message/read/'; // 标记消息为已读，需附加messageId
+  static const String markConversationRead =
+      '/user/message/read/conversation/'; // 标记会话为已读，需附加conversationId
+  static const String closeConversation =
+      '/user/message/close/'; // 关闭会话，需附加conversationId
 
   // 钱包模块
   static const String walletCreate = '/api/wallet/create'; // 创建钱包账户

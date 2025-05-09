@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
+import 'dart:convert'; // 用于解析JWT
 import 'api.dart';
 import 'api_response.dart';
 import 'dart:io';
@@ -356,5 +357,62 @@ class HttpUtil {
       }
     }
     return ApiResponse(code: -1, message: '网络错误，请检查网络连接');
+  }
+
+  // 获取当前用户ID (从JWT Token中提取)
+  int? getCurrentUserId() {
+    try {
+      // 从缓存获取token
+      if (_cachedToken == null || _cachedToken!.isEmpty) {
+        developer.log('无法获取用户ID: Token为空', name: 'HttpUtil');
+        return null;
+      }
+
+      // JWT通常由三部分组成，用点号分隔 (header.payload.signature)
+      List<String> parts = _cachedToken!.split('.');
+      if (parts.length < 2) {
+        developer.log('无法解析Token: 格式不正确', name: 'HttpUtil');
+        return null;
+      }
+
+      // 解码payload部分 (Base64)
+      String normalizedPayload = _base64Normalize(parts[1]);
+      String decodedPayload = utf8.decode(base64Url.decode(normalizedPayload));
+      Map<String, dynamic> payload = jsonDecode(decodedPayload);
+
+      // 从payload中提取用户ID (根据后端JWT的结构调整字段名)
+      // 常见的用户标识字段: "sub", "userId", "user_id", "id" 等
+      final userId = payload['userId'] ?? payload['sub'] ?? payload['id'];
+      if (userId != null) {
+        return int.tryParse(userId.toString());
+      }
+
+      developer.log('Token中没有找到用户ID, Token Payload: $payload',
+          name: 'HttpUtil');
+      return null;
+    } catch (e) {
+      developer.log('解析用户ID异常: $e', name: 'HttpUtil');
+      return null;
+    }
+  }
+
+  // 标准化Base64字符串以便正确解码
+  String _base64Normalize(String base64String) {
+    // 添加缺失的填充字符
+    String normalized = base64String;
+    switch (normalized.length % 4) {
+      case 0:
+        break; // 已经是4的倍数
+      case 2:
+        normalized += '==';
+        break;
+      case 3:
+        normalized += '=';
+        break;
+      default:
+        // 长度 % 4 == 1 的情况通常表示格式不正确的base64
+        throw FormatException('非法的base64字符串');
+    }
+    return normalized;
   }
 }
