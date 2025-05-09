@@ -5,6 +5,9 @@ import 'config/theme.dart';
 import 'network/api.dart';
 import 'pages/auth/register_page.dart';
 import 'pages/main_container.dart';
+import 'pages/address_management_page.dart';
+import 'pages/order/create_order_page.dart';
+import 'pages/order/pending_payment_page.dart';
 
 void main() {
   // 确保 Flutter 框架完全初始化
@@ -28,6 +31,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const MainContainer(), // 更新为MainContainer
+        '/address-management': (context) => const AddressManagementPage(),
+        '/pending-payment': (context) => const PendingPaymentPage(),
       },
       debugShowCheckedModeBanner: false,
     );

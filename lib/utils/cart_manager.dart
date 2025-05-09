@@ -61,9 +61,10 @@ class CartManager {
           'price': product['price'],
           'mainImageUrl': mainImageUrl,
           'quantity': 1,
+          'sellerId': product['sellerId'] ?? 1,
         };
         cartItems.add(cartItem);
-        developer.log('添加商品到购物车: ${product['productId']}, 图片URL: $mainImageUrl',
+        developer.log('添加商品到购物车: ${product['productId']}, 图片URL: $mainImageUrl, 卖家ID: ${product['sellerId'] ?? 1}',
             name: 'CartManager');
       }
 

@@ -57,18 +57,36 @@ class _LocalPageState extends State<LocalPage> {
   }
 
   void _scrollListener() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    if (!_scrollController.hasClients) return;
+    
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    final remainingDistance = maxScroll - currentScroll;
+    
+    developer.log('推荐页滚动: 当前=${currentScroll.toInt()}, 最大=$maxScroll, 剩余=$remainingDistance', 
+        name: 'LocalPage');
+        
+    if (remainingDistance < 200) {
       if (!_isLoadingMore && _hasMoreData && !_isLoading) {
+        developer.log('触发加载更多推荐商品，当前页码: $_pageNum', name: 'LocalPage');
         _loadMoreProducts();
       }
     }
   }
 
   void _newestScrollListener() {
-    if (_newestScrollController.position.pixels >=
-        _newestScrollController.position.maxScrollExtent - 200) {
+    if (!_newestScrollController.hasClients) return;
+    
+    final maxScroll = _newestScrollController.position.maxScrollExtent;
+    final currentScroll = _newestScrollController.position.pixels;
+    final remainingDistance = maxScroll - currentScroll;
+    
+    developer.log('最新页滚动: 当前=${currentScroll.toInt()}, 最大=$maxScroll, 剩余=$remainingDistance', 
+        name: 'LocalPage');
+        
+    if (remainingDistance < 200) {
       if (!_isLoadingMoreNewest && _hasMoreNewestData && !_isNewestLoading) {
+        developer.log('触发加载更多最新商品，当前页码: $_newestPageNum', name: 'LocalPage');
         _loadMoreNewestProducts();
       }
     }
@@ -110,6 +128,7 @@ class _LocalPageState extends State<LocalPage> {
         'sortOrder': 'desc',
       };
 
+      developer.log('请求推荐商品列表: 页码=$_pageNum, 每页数量=$_pageSize', name: 'LocalPage');
       final response = await HttpUtil().get(Api.productList, params: params);
 
       if (response.isSuccess && response.data != null) {
@@ -117,6 +136,9 @@ class _LocalPageState extends State<LocalPage> {
         final List<dynamic> productList = data['list'] ?? [];
         final int totalPages = data['pages'] ?? 1;
         final bool hasNext = data['hasNext'] ?? false;
+
+        developer.log('获取推荐商品成功: 总条数=${productList.length}, 总页数=$totalPages, 是否有下一页=$hasNext',
+            name: 'LocalPage');
 
         setState(() {
           if (isRefresh) {
@@ -133,12 +155,14 @@ class _LocalPageState extends State<LocalPage> {
             }
           }
 
+          developer.log('添加后推荐商品总数: ${_recommendedProducts.length}', name: 'LocalPage');
           _totalPages = totalPages;
           _hasMoreData = hasNext;
           _isLoading = false;
           _isLoadingMore = false;
         });
       } else {
+        developer.log('获取推荐商品失败: ${response.message}', name: 'LocalPage');
         setState(() {
           _isLoading = false;
           _isLoadingMore = false;
@@ -147,6 +171,7 @@ class _LocalPageState extends State<LocalPage> {
         });
       }
     } catch (e) {
+      developer.log('获取推荐商品异常: $e', name: 'LocalPage');
       setState(() {
         _isLoading = false;
         _isLoadingMore = false;
@@ -157,16 +182,20 @@ class _LocalPageState extends State<LocalPage> {
   }
 
   Future<void> _loadMoreProducts() async {
+    if (_isLoadingMore) return;
+    
     if (_pageNum < _totalPages) {
       setState(() {
         _pageNum++;
         _isLoadingMore = true;
       });
+      developer.log('加载更多推荐商品: 当前页码=$_pageNum, 总页数=$_totalPages', name: 'LocalPage');
       await _fetchRecommendedProducts();
     } else {
       setState(() {
         _hasMoreData = false;
       });
+      developer.log('已经是最后一页推荐商品', name: 'LocalPage');
     }
   }
 
@@ -190,6 +219,7 @@ class _LocalPageState extends State<LocalPage> {
         'sortOrder': 'desc',
       };
 
+      developer.log('请求最新商品列表: 页码=$_newestPageNum, 每页数量=$_pageSize', name: 'LocalPage');
       final response = await HttpUtil().get(Api.productList, params: params);
 
       if (response.isSuccess && response.data != null) {
@@ -197,6 +227,9 @@ class _LocalPageState extends State<LocalPage> {
         final List<dynamic> productList = data['list'] ?? [];
         final int totalPages = data['pages'] ?? 1;
         final bool hasNext = data['hasNext'] ?? false;
+
+        developer.log('获取最新商品成功: 总条数=${productList.length}, 总页数=$totalPages, 是否有下一页=$hasNext',
+            name: 'LocalPage');
 
         setState(() {
           if (isRefresh) {
@@ -213,12 +246,14 @@ class _LocalPageState extends State<LocalPage> {
             }
           }
 
+          developer.log('添加后最新商品总数: ${_newestProducts.length}', name: 'LocalPage');
           _newestTotalPages = totalPages;
           _hasMoreNewestData = hasNext;
           _isNewestLoading = false;
           _isLoadingMoreNewest = false;
         });
       } else {
+        developer.log('获取最新商品失败: ${response.message}', name: 'LocalPage');
         setState(() {
           _isNewestLoading = false;
           _isLoadingMoreNewest = false;
@@ -227,6 +262,7 @@ class _LocalPageState extends State<LocalPage> {
         });
       }
     } catch (e) {
+      developer.log('获取最新商品异常: $e', name: 'LocalPage');
       setState(() {
         _isNewestLoading = false;
         _isLoadingMoreNewest = false;
@@ -237,16 +273,20 @@ class _LocalPageState extends State<LocalPage> {
   }
 
   Future<void> _loadMoreNewestProducts() async {
+    if (_isLoadingMoreNewest) return;
+    
     if (_newestPageNum < _newestTotalPages) {
       setState(() {
         _newestPageNum++;
         _isLoadingMoreNewest = true;
       });
+      developer.log('加载更多最新商品: 当前页码=$_newestPageNum, 总页数=$_newestTotalPages', name: 'LocalPage');
       await _fetchNewestProducts();
     } else {
       setState(() {
         _hasMoreNewestData = false;
       });
+      developer.log('已经是最后一页最新商品', name: 'LocalPage');
     }
   }
 
@@ -395,9 +435,13 @@ class _LocalPageState extends State<LocalPage> {
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
         ),
-        itemCount: _recommendedProducts.length + (_hasMoreData ? 1 : 0),
+        itemCount: _hasMoreData ? _recommendedProducts.length + 1 : _recommendedProducts.length,
         itemBuilder: (context, index) {
-          if (index == _recommendedProducts.length) {
+          if (index == _recommendedProducts.length && _hasMoreData) {
+            if (!_isLoadingMore) {
+              Future.microtask(() => _loadMoreProducts());
+            }
+            
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -405,6 +449,7 @@ class _LocalPageState extends State<LocalPage> {
               ),
             );
           }
+          
           return _buildProductItem(_recommendedProducts[index]);
         },
       ),
@@ -454,9 +499,13 @@ class _LocalPageState extends State<LocalPage> {
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
         ),
-        itemCount: _newestProducts.length + (_hasMoreNewestData ? 1 : 0),
+        itemCount: _hasMoreNewestData ? _newestProducts.length + 1 : _newestProducts.length,
         itemBuilder: (context, index) {
-          if (index == _newestProducts.length) {
+          if (index == _newestProducts.length && _hasMoreNewestData) {
+            if (!_isLoadingMoreNewest) {
+              Future.microtask(() => _loadMoreNewestProducts());
+            }
+            
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -464,6 +513,7 @@ class _LocalPageState extends State<LocalPage> {
               ),
             );
           }
+          
           return _buildProductItem(_newestProducts[index]);
         },
       ),

@@ -5,6 +5,7 @@ import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart';
 import 'product_detail_page.dart';
+import 'order/cart_order_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -149,12 +150,22 @@ class _CartPageState extends State<CartPage> {
       return;
     }
 
-    // 实际项目中，应该调用创建订单的API
-    // await HttpUtil().post(Api.createOrder, data: { 'products': _cartItems });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('订单创建功能开发中')),
-    );
+    // 从购物车中获取第一个卖家ID，用于示例
+    // 实际项目中可能需要分卖家创建多个订单
+    final sellerId = _cartItems.first['sellerId'] as int? ?? 1;
+    
+    // 跳转到创建订单页面，传递购物车商品信息
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CartOrderPage(cartItems: _cartItems),
+      ),
+    ).then((value) {
+      // 如果订单创建成功，清空购物车
+      if (value == true) {
+        _fetchCartItems();
+      }
+    });
   }
 
   @override
@@ -302,7 +313,7 @@ class _CartPageState extends State<CartPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
                   ),
-                  child: const Text('结算(${0})'),
+                  child: Text('结算(${_cartItems.length})'),
                 ),
               ],
             ),

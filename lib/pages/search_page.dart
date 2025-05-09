@@ -6,6 +6,7 @@ import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart';
 import 'product_detail_page.dart';
+import 'dart:async'; // 导入Timer
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -22,6 +23,7 @@ class _SearchPageState extends State<SearchPage> {
   bool _isError = false;
   String _errorMessage = '';
   String _lastSearchKeyword = '';
+  bool _hasSubmittedKeyword = false; // 跟踪用户是否已经提交了搜索
 
   // 搜索历史
   List<String> _searchHistory = [];
@@ -49,6 +51,9 @@ class _SearchPageState extends State<SearchPage> {
   bool _hasMoreData = true;
   bool _isLoadingMore = false;
   final ScrollController _scrollController = ScrollController();
+  
+  // 添加搜索延迟定时器
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -59,6 +64,9 @@ class _SearchPageState extends State<SearchPage> {
     // 加载搜索历史
     _loadSearchHistory();
 
+    // 添加搜索框文本变化监听
+    _searchController.addListener(_onSearchInputChanged);
+
     // 自动聚焦搜索框
     Future.delayed(const Duration(milliseconds: 300), () {
       _searchFocusNode.requestFocus();
@@ -67,11 +75,36 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchInputChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    _searchDebounce?.cancel(); // 取消定时器
     super.dispose();
+  }
+
+  // 监听搜索框文本变化
+  void _onSearchInputChanged() {
+    final keyword = _searchController.text.trim();
+    
+    // 如果输入为空，清空结果
+    if (keyword.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+        _hasSubmittedKeyword = false;
+      });
+      return;
+    }
+    
+    // 使用防抖，避免频繁请求
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (keyword.isNotEmpty) {
+        _searchProducts(keyword, isAutoSearch: true);
+      }
+    });
   }
 
   // 滚动监听，用于实现上拉加载更多
@@ -142,19 +175,25 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   // 搜索商品
-  Future<void> _searchProducts(String keyword, {bool isRefresh = true}) async {
+  Future<void> _searchProducts(String keyword, {bool isRefresh = true, bool isAutoSearch = false}) async {
     // 如果搜索关键词为空，清空结果并返回
     if (keyword.trim().isEmpty) {
       setState(() {
         _searchResults = [];
         _isSearching = false;
         _isError = false;
+        _hasSubmittedKeyword = false;
       });
       return;
     }
 
     // 保存当前搜索关键词
     _lastSearchKeyword = keyword;
+    
+    // 如果是手动提交的搜索，设置标志位
+    if (!isAutoSearch) {
+      _hasSubmittedKeyword = true;
+    }
 
     if (isRefresh) {
       setState(() {
@@ -190,6 +229,7 @@ class _SearchPageState extends State<SearchPage> {
         params['categoryId'] = _categoryId;
       }
 
+      developer.log('开始搜索: 关键词=$keyword, 页码=$_pageNum', name: 'SearchPage');
       // 使用productList接口而不是productSearch接口，因为它支持关键词搜索
       final response = await HttpUtil().get(Api.productList, params: params);
 
@@ -320,7 +360,7 @@ class _SearchPageState extends State<SearchPage> {
           textInputAction: TextInputAction.search,
           onSubmitted: (_) => _handleSearch(),
           onChanged: (value) {
-            setState(() {});
+            // 不需要在这里调用setState，因为已经在_onSearchInputChanged中处理了
           },
         ),
         actions: [
@@ -428,15 +468,15 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildSearchResults() {
-    if (_isSearching && _searchResults.isEmpty) {
       // 首次搜索加载中
+    if (_isSearching && _searchResults.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
 
-    if (_isError) {
       // 搜索出错
+    if (_isError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -454,13 +494,13 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
-    if (_searchController.text.isEmpty) {
       // 未输入关键词，显示搜索历史
+    if (_searchController.text.isEmpty) {
       return _buildSearchHistoryView();
     }
 
+    // 无搜索结果（只有当完成搜索且结果为空时显示）
     if (_searchResults.isEmpty && !_isSearching) {
-      // 无搜索结果
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -481,6 +521,19 @@ class _SearchPageState extends State<SearchPage> {
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: [
+          // 搜索结果信息
+          if (_searchResults.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Text(
+                '共找到 ${_searchResults.length} 件相关商品',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            
           // 搜索结果网格
           GridView.builder(
             shrinkWrap: true,

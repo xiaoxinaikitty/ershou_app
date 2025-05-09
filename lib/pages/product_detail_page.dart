@@ -5,6 +5,7 @@ import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart';
 import 'chat/message_page.dart'; // 导入消息页面
+import 'order/create_order_page.dart'; // 导入创建订单页面
 
 class ProductDetailPage extends StatefulWidget {
   final int productId;
@@ -187,34 +188,40 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   // 创建订单（直接购买）
   Future<void> _createOrder() async {
-    try {
-      final response = await HttpUtil().post(
-        Api.orderCreate,
-        data: {
-          'productId': widget.productId,
-          'quantity': 1,
-        },
-      );
-
-      if (!mounted) return;
-
-      if (response.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('订单创建成功，前往支付')),
-        );
-        // TODO: 跳转到订单支付页面
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.message ?? '创建订单失败')),
-        );
-      }
-    } catch (e) {
-      developer.log('创建订单异常: $e', name: 'ProductDetailPage');
-      if (!mounted) return;
+    if (_productData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('网络错误，请稍后再试')),
+        const SnackBar(content: Text('商品数据加载失败，请重试')),
       );
+      return;
     }
+
+    // 获取所需数据
+    final int productId = _productData!['productId'] as int;
+    final String productTitle = _productData!['title'] as String;
+    final double price = _productData!['price'] as double;
+    final int sellerId = _productData!['userId'] as int;
+    
+    // 获取商品图片
+    String imageUrl = '';
+    if (_imageUrls.isNotEmpty) {
+      imageUrl = _imageUrls[0];
+    } else if (_productData!['mainImageUrl'] != null) {
+      imageUrl = _productData!['mainImageUrl'] as String;
+    }
+    
+    // 跳转到订单创建页面
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateOrderPage(
+          productId: productId,
+          productTitle: productTitle,
+          price: price,
+          imageUrl: imageUrl,
+          sellerId: sellerId,
+        ),
+      ),
+    );
   }
 
   // 联系客服（联系商品发布者）
