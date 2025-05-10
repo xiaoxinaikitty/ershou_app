@@ -27,6 +27,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   String _errorMessage = '';
   Map<String, dynamic>? _productData;
   List<String> _imageUrls = [];
+  bool _isFavorite = false; // 添加收藏状态标记
 
   @override
   void initState() {
@@ -54,6 +55,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       }
     }
     _fetchProductDetail();
+    _checkFavoriteStatus(); // 新增：检查收藏状态
   }
 
   // 获取商品详情
@@ -158,27 +160,70 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
-  // 添加商品到收藏
-  Future<void> _addToFavorite() async {
+  // 新增：检查是否已收藏
+  Future<void> _checkFavoriteStatus() async {
     try {
-      final response = await HttpUtil().post(
-        Api.favoriteAdd,
-        data: {'productId': widget.productId},
-      );
+      final response = await HttpUtil().get('${Api.favoriteCheck}${widget.productId}');
 
-      if (!mounted) return;
-
-      if (response.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('已添加到收藏')),
-        );
+      if (response.isSuccess && response.data != null) {
+        final Map<String, dynamic> result = response.data as Map<String, dynamic>;
+        setState(() {
+          _isFavorite = result['isFavorite'] as bool? ?? false;
+        });
+        developer.log('检查收藏状态结果: $_isFavorite', name: 'ProductDetailPage');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.message ?? '添加收藏失败')),
-        );
+        developer.log('检查收藏状态失败: ${response.message}', name: 'ProductDetailPage');
       }
     } catch (e) {
-      developer.log('添加收藏异常: $e', name: 'ProductDetailPage');
+      developer.log('检查收藏状态异常: $e', name: 'ProductDetailPage');
+    }
+  }
+
+  // 添加或取消收藏
+  Future<void> _addToFavorite() async {
+    try {
+      if (_isFavorite) {
+        // 取消收藏
+        final response = await HttpUtil().delete('${Api.favoriteCancel}${widget.productId}');
+        
+        if (!mounted) return;
+        
+        if (response.isSuccess) {
+          setState(() {
+            _isFavorite = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('已取消收藏')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response.message ?? '取消收藏失败')),
+          );
+        }
+      } else {
+        // 添加收藏
+        final response = await HttpUtil().post(
+          Api.favoriteAdd,
+          data: {'productId': widget.productId},
+        );
+
+        if (!mounted) return;
+
+        if (response.isSuccess) {
+          setState(() {
+            _isFavorite = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('已添加到收藏')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response.message ?? '添加收藏失败')),
+          );
+        }
+      }
+    } catch (e) {
+      developer.log('收藏操作异常: $e', name: 'ProductDetailPage');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('网络错误，请稍后再试')),
@@ -524,10 +569,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 children: [
                   // 收藏按钮
                   IconButton(
-                    icon: const Icon(Icons.favorite_border),
+                    icon: Icon(
+                      _isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: _isFavorite ? Colors.red : Colors.grey,
+                    ),
                     onPressed: _addToFavorite,
-                    tooltip: '收藏',
-                    color: Colors.grey,
+                    tooltip: _isFavorite ? '取消收藏' : '收藏',
                   ),
                   // 客服按钮
                   IconButton(

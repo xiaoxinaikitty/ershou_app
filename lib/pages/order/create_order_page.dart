@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
+import 'dart:math' as math;
 import '../../config/theme.dart';
 import '../../network/api.dart';
 import '../../network/http_util.dart';
 import '../../models/order.dart';
 import '../../models/address.dart';
 import 'pending_payment_page.dart';
+import 'alipay_web_view_page.dart';
+import 'package:dio/dio.dart';
 
 class CreateOrderPage extends StatefulWidget {
   final int productId;
@@ -140,11 +143,11 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
 
   // 创建订单
   Future<void> _createOrder() async {
-    // 检查是否选择了收货地址
-    if (_selectedAddress == null) {
+    // 验证用户是否选择了地址 - 仅对线下交易强制验证
+    if (_paymentType == 2 && _selectedAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('请选择收货地址'),
+          content: Text('线下交易必须选择收货地址'),
           backgroundColor: Colors.red,
         ),
       );
@@ -153,56 +156,121 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
 
     setState(() {
       _isSubmitting = true;
+      _errorMessage = '';
     });
 
     try {
       // 构建订单数据
-      final orderData = {
+      final Map<String, dynamic> orderData = {
         'productId': widget.productId,
-        'sellerId': widget.sellerId,
         'paymentType': _paymentType,
         'deliveryType': _deliveryType,
-        'orderAmount': widget.price + _deliveryFee,
-        'paymentAmount': widget.price + _deliveryFee,
-        'deliveryFee': _deliveryFee,
         'remark': _remark,
-        'address': {
-          'receiverName': _selectedAddress!['consignee'],
-          'receiverPhone': _selectedAddress!['contactPhone'],
-          'province': _selectedAddress!['region'].split(' ')[0],
-          'city': _selectedAddress!['region'].split(' ')[1] ?? '',
-          'district': _selectedAddress!['region'].split(' ')[2] ?? '',
-          'detailAddress': _selectedAddress!['detail'],
-        },
+        'price': widget.price,
+        'deliveryFee': _deliveryFee,
+        'sellerId': widget.sellerId,
       };
-
-      developer.log('创建订单数据: $orderData', name: 'CreateOrderPage');
       
+      // 仅当选择了地址时才添加地址ID
+      if (_selectedAddress != null) {
+        orderData['addressId'] = _selectedAddress!['id'];
+      }
+
+      developer.log('创建订单请求数据: $orderData', name: 'CreateOrderPage');
+
+      // 调用创建订单API
       final response = await HttpUtil().post(Api.orderCreate, data: orderData);
+
+      if (!mounted) return;
 
       setState(() {
         _isSubmitting = false;
       });
 
-      if (response.isSuccess && response.data != null) {
-        // 订单创建成功，停止倒计时
-        _timer?.cancel();
+      if (response.isSuccess) {
+        final Map<String, dynamic> orderResult = response.data as Map<String, dynamic>;
+        final orderId = orderResult['orderId'];
         
-        developer.log('订单创建成功: ${response.data}', name: 'CreateOrderPage');
+        developer.log('创建订单成功，订单ID: $orderId', name: 'CreateOrderPage');
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('订单创建成功'),
+              content: Text('下单成功'),
               backgroundColor: Colors.green,
             ),
           );
           
-          // 这里可以跳转到待付款订单列表页面或支付页面
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PendingPaymentPage()),
-          );
+          // 如果选择的是支付宝支付，则调用支付宝支付接口
+          if (_paymentType == 1) { // 在线支付
+            // 调用支付宝支付接口
+            try {
+              developer.log('请求支付宝支付，订单ID: $orderId', name: 'CreateOrderPage');
+              // 修改接口调用，使用dio直接获取HTML内容，而不是通过ApiResponse
+              final dio = Dio();
+              dio.options.baseUrl = Api.baseUrl;
+              dio.options.contentType = 'text/html';
+              dio.options.responseType = ResponseType.plain;
+              
+              // 获取token并设置请求头
+              final token = await HttpUtil().getToken();
+              if (token != null && token.isNotEmpty) {
+                dio.options.headers['Authorization'] = 'Bearer $token';
+              }
+              
+              // 直接请求HTML内容
+              final payResponse = await dio.get('${Api.alipayPay}?orderId=$orderId');
+              
+              if (payResponse.statusCode == 200) {
+                final String payHtml = payResponse.data as String;
+                
+                // 记录支付表单HTML内容，便于调试
+                developer.log('支付表单HTML: ${payHtml.substring(0, math.min(100, payHtml.length))}...', name: 'CreateOrderPage');
+                
+                // 跳转到支付WebView页面
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AlipayWebViewPage(payHtml: payHtml),
+                  ),
+                );
+                return;
+              } else {
+                // 支付请求失败，跳转到待付款页面
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('支付请求失败：状态码 ${payResponse.statusCode}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PendingPaymentPage()),
+                );
+              }
+            } catch (e) {
+              developer.log('支付宝支付请求异常: $e', name: 'CreateOrderPage');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('支付请求异常: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              
+              // 出现异常时，跳转到待付款订单列表页面
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const PendingPaymentPage()),
+              );
+            }
+          } else {
+            // 如果不是在线支付，跳转到待付款订单列表页面
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const PendingPaymentPage()),
+            );
+          }
         }
       } else {
         if (mounted) {

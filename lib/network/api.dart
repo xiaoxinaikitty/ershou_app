@@ -43,6 +43,7 @@ class Api {
   static const String favoriteCancel =
       '/product/favorite/'; // 取消收藏，需附加productId
   static const String favoriteList = '/product/favorite/list'; // 获取收藏列表
+  static const String favoriteCheck = '/product/favorite/check/'; // 检查是否已收藏，需附加productId
 
   // 商品图片模块
   static const String imageAdd = '/product/image/add'; // 添加或批量添加商品图片
@@ -59,10 +60,10 @@ class Api {
       '/product/report/list/'; // 获取商品举报列表，需附加productId
 
   // 订单模块
-  static const String orderCreate = '/order/create'; // 创建订单
+  static const String orderCreate = '/order/v2/create'; // 创建订单
   static const String orderList = '/order/list'; // 获取订单列表
   static const String orderCancel = '/order/cancel/'; // 取消订单，需附加orderId
-  static const String orderPay = '/order/pay/'; // 支付订单，需附加orderId
+  static const String orderPay = '/order/pay'; // 支付订单
   static const String orderDetail = '/order/detail/'; // 获取订单详情，需附加orderId
   static const String orderNotifyShipment = '/order/notify-shipment'; // 通知发货
   static const String orderConfirmReceipt = '/order/confirm-receipt'; // 确认收货
@@ -113,4 +114,9 @@ class Api {
   static const String feedbackDetail =
       '/feedback/detail/'; // 获取反馈详情，需附加feedbackId
   static const String feedbackListByUser = '/feedback/my-list'; // 获取当前用户的反馈列表
+
+  // 支付宝支付模块
+  static const String alipayPay = '/alipay/pay'; // 支付宝支付
+  static const String alipayNotify = '/alipay/notify'; // 支付宝异步回调
+  static const String alipayReturn = '/alipay/return'; // 支付宝同步回调
 }
