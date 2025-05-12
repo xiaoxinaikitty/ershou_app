@@ -15,7 +15,31 @@ class LocalPage extends StatefulWidget {
 
 class _LocalPageState extends State<LocalPage> {
   final List<String> _tabs = ['推荐', '最新', '附近'];
-  String _currentLocation = '北京';
+  String _currentLocation = '北京市';
+
+  // 城市列表
+  final List<String> _cities = [
+    '北京市',
+    '上海市',
+    '广州市',
+    '深圳市',
+    '杭州市',
+    '南京市',
+    '成都市',
+    '重庆市',
+    '武汉市',
+    '西安市',
+    '天津市',
+    '苏州市',
+    '郑州市',
+    '长沙市',
+    '东莞市',
+    '沈阳市',
+    '青岛市',
+    '合肥市',
+    '佛山市',
+    '宁波市'
+  ];
 
   // 商品列表相关状态
   final List<Map<String, dynamic>> _recommendedProducts = [];
@@ -58,14 +82,15 @@ class _LocalPageState extends State<LocalPage> {
 
   void _scrollListener() {
     if (!_scrollController.hasClients) return;
-    
+
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
     final remainingDistance = maxScroll - currentScroll;
-    
-    developer.log('推荐页滚动: 当前=${currentScroll.toInt()}, 最大=$maxScroll, 剩余=$remainingDistance', 
+
+    developer.log(
+        '推荐页滚动: 当前=${currentScroll.toInt()}, 最大=$maxScroll, 剩余=$remainingDistance',
         name: 'LocalPage');
-        
+
     if (remainingDistance < 200) {
       if (!_isLoadingMore && _hasMoreData && !_isLoading) {
         developer.log('触发加载更多推荐商品，当前页码: $_pageNum', name: 'LocalPage');
@@ -76,14 +101,15 @@ class _LocalPageState extends State<LocalPage> {
 
   void _newestScrollListener() {
     if (!_newestScrollController.hasClients) return;
-    
+
     final maxScroll = _newestScrollController.position.maxScrollExtent;
     final currentScroll = _newestScrollController.position.pixels;
     final remainingDistance = maxScroll - currentScroll;
-    
-    developer.log('最新页滚动: 当前=${currentScroll.toInt()}, 最大=$maxScroll, 剩余=$remainingDistance', 
+
+    developer.log(
+        '最新页滚动: 当前=${currentScroll.toInt()}, 最大=$maxScroll, 剩余=$remainingDistance',
         name: 'LocalPage');
-        
+
     if (remainingDistance < 200) {
       if (!_isLoadingMoreNewest && _hasMoreNewestData && !_isNewestLoading) {
         developer.log('触发加载更多最新商品，当前页码: $_newestPageNum', name: 'LocalPage');
@@ -126,9 +152,12 @@ class _LocalPageState extends State<LocalPage> {
         'status': 1,
         'sortField': 'time',
         'sortOrder': 'desc',
+        'location': _currentLocation,
       };
 
-      developer.log('请求推荐商品列表: 页码=$_pageNum, 每页数量=$_pageSize', name: 'LocalPage');
+      developer.log(
+          '请求推荐商品列表: 页码=$_pageNum, 每页数量=$_pageSize, 位置=$_currentLocation',
+          name: 'LocalPage');
       final response = await HttpUtil().get(Api.productList, params: params);
 
       if (response.isSuccess && response.data != null) {
@@ -137,7 +166,8 @@ class _LocalPageState extends State<LocalPage> {
         final int totalPages = data['pages'] ?? 1;
         final bool hasNext = data['hasNext'] ?? false;
 
-        developer.log('获取推荐商品成功: 总条数=${productList.length}, 总页数=$totalPages, 是否有下一页=$hasNext',
+        developer.log(
+            '获取推荐商品成功: 总条数=${productList.length}, 总页数=$totalPages, 是否有下一页=$hasNext',
             name: 'LocalPage');
 
         setState(() {
@@ -155,7 +185,8 @@ class _LocalPageState extends State<LocalPage> {
             }
           }
 
-          developer.log('添加后推荐商品总数: ${_recommendedProducts.length}', name: 'LocalPage');
+          developer.log('添加后推荐商品总数: ${_recommendedProducts.length}',
+              name: 'LocalPage');
           _totalPages = totalPages;
           _hasMoreData = hasNext;
           _isLoading = false;
@@ -183,13 +214,14 @@ class _LocalPageState extends State<LocalPage> {
 
   Future<void> _loadMoreProducts() async {
     if (_isLoadingMore) return;
-    
+
     if (_pageNum < _totalPages) {
       setState(() {
         _pageNum++;
         _isLoadingMore = true;
       });
-      developer.log('加载更多推荐商品: 当前页码=$_pageNum, 总页数=$_totalPages', name: 'LocalPage');
+      developer.log('加载更多推荐商品: 当前页码=$_pageNum, 总页数=$_totalPages',
+          name: 'LocalPage');
       await _fetchRecommendedProducts();
     } else {
       setState(() {
@@ -217,9 +249,12 @@ class _LocalPageState extends State<LocalPage> {
         'status': 1,
         'sortField': 'time',
         'sortOrder': 'desc',
+        'location': _currentLocation,
       };
 
-      developer.log('请求最新商品列表: 页码=$_newestPageNum, 每页数量=$_pageSize', name: 'LocalPage');
+      developer.log(
+          '请求最新商品列表: 页码=$_newestPageNum, 每页数量=$_pageSize, 位置=$_currentLocation',
+          name: 'LocalPage');
       final response = await HttpUtil().get(Api.productList, params: params);
 
       if (response.isSuccess && response.data != null) {
@@ -228,7 +263,8 @@ class _LocalPageState extends State<LocalPage> {
         final int totalPages = data['pages'] ?? 1;
         final bool hasNext = data['hasNext'] ?? false;
 
-        developer.log('获取最新商品成功: 总条数=${productList.length}, 总页数=$totalPages, 是否有下一页=$hasNext',
+        developer.log(
+            '获取最新商品成功: 总条数=${productList.length}, 总页数=$totalPages, 是否有下一页=$hasNext',
             name: 'LocalPage');
 
         setState(() {
@@ -246,7 +282,8 @@ class _LocalPageState extends State<LocalPage> {
             }
           }
 
-          developer.log('添加后最新商品总数: ${_newestProducts.length}', name: 'LocalPage');
+          developer.log('添加后最新商品总数: ${_newestProducts.length}',
+              name: 'LocalPage');
           _newestTotalPages = totalPages;
           _hasMoreNewestData = hasNext;
           _isNewestLoading = false;
@@ -274,13 +311,14 @@ class _LocalPageState extends State<LocalPage> {
 
   Future<void> _loadMoreNewestProducts() async {
     if (_isLoadingMoreNewest) return;
-    
+
     if (_newestPageNum < _newestTotalPages) {
       setState(() {
         _newestPageNum++;
         _isLoadingMoreNewest = true;
       });
-      developer.log('加载更多最新商品: 当前页码=$_newestPageNum, 总页数=$_newestTotalPages', name: 'LocalPage');
+      developer.log('加载更多最新商品: 当前页码=$_newestPageNum, 总页数=$_newestTotalPages',
+          name: 'LocalPage');
       await _fetchNewestProducts();
     } else {
       setState(() {
@@ -345,6 +383,145 @@ class _LocalPageState extends State<LocalPage> {
     }
   }
 
+  // 显示位置选择对话框
+  void _showLocationDialog() {
+    // 搜索关键词
+    String searchKeyword = '';
+
+    // 热门城市
+    final List<String> hotCities = [
+      '北京市',
+      '上海市',
+      '广州市',
+      '深圳市',
+      '杭州市',
+      '成都市',
+      '重庆市'
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          // 根据搜索关键词过滤城市
+          List<String> filteredCities = searchKeyword.isEmpty
+              ? _cities
+              : _cities.where((city) => city.contains(searchKeyword)).toList();
+
+          return AlertDialog(
+            title: const Text('选择城市'),
+            content: Container(
+              width: double.maxFinite,
+              constraints: const BoxConstraints(maxHeight: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 搜索框
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: '搜索城市',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+                    ),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        searchKeyword = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 热门城市
+                  if (searchKeyword.isEmpty) ...[
+                    const Text('热门城市',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: hotCities
+                          .map((city) => InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _currentLocation = city;
+                                  });
+                                  Navigator.of(context).pop();
+                                  // 刷新商品列表
+                                  _fetchRecommendedProducts(isRefresh: true);
+                                  _fetchNewestProducts(isRefresh: true);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: _currentLocation == city
+                                        ? AppTheme.primaryColor
+                                        : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    city,
+                                    style: TextStyle(
+                                      color: _currentLocation == city
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('全部城市',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // 城市列表
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: filteredCities.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          dense: true,
+                          title: Text(filteredCities[index]),
+                          selected: _currentLocation == filteredCities[index],
+                          selectedTileColor: Colors.grey[200],
+                          onTap: () {
+                            // 更新位置
+                            setState(() {
+                              _currentLocation = filteredCities[index];
+                            });
+                            Navigator.of(context).pop();
+                            // 刷新商品列表
+                            _fetchRecommendedProducts(isRefresh: true);
+                            _fetchNewestProducts(isRefresh: true);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('取消'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -355,7 +532,7 @@ class _LocalPageState extends State<LocalPage> {
             children: [
               GestureDetector(
                 onTap: () {
-                  // 修改位置功能
+                  _showLocationDialog();
                 },
                 child: Row(
                   children: [
@@ -435,13 +612,15 @@ class _LocalPageState extends State<LocalPage> {
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
         ),
-        itemCount: _hasMoreData ? _recommendedProducts.length + 1 : _recommendedProducts.length,
+        itemCount: _hasMoreData
+            ? _recommendedProducts.length + 1
+            : _recommendedProducts.length,
         itemBuilder: (context, index) {
           if (index == _recommendedProducts.length && _hasMoreData) {
             if (!_isLoadingMore) {
               Future.microtask(() => _loadMoreProducts());
             }
-            
+
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -449,7 +628,7 @@ class _LocalPageState extends State<LocalPage> {
               ),
             );
           }
-          
+
           return _buildProductItem(_recommendedProducts[index]);
         },
       ),
@@ -499,13 +678,15 @@ class _LocalPageState extends State<LocalPage> {
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
         ),
-        itemCount: _hasMoreNewestData ? _newestProducts.length + 1 : _newestProducts.length,
+        itemCount: _hasMoreNewestData
+            ? _newestProducts.length + 1
+            : _newestProducts.length,
         itemBuilder: (context, index) {
           if (index == _newestProducts.length && _hasMoreNewestData) {
             if (!_isLoadingMoreNewest) {
               Future.microtask(() => _loadMoreNewestProducts());
             }
-            
+
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -513,7 +694,7 @@ class _LocalPageState extends State<LocalPage> {
               ),
             );
           }
-          
+
           return _buildProductItem(_newestProducts[index]);
         },
       ),

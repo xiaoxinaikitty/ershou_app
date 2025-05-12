@@ -8,6 +8,7 @@ import 'product_detail_page.dart'; // 假设有这个页面用于查看商品详
 import 'search_page.dart'; // 导入搜索页面
 import 'chat/conversation_list_page.dart'; // 导入会话列表页面
 import 'order/create_order_page.dart'; // 导入创建订单页面
+import '../widgets/promotion_carousel.dart'; // 导入营销活动轮播图组件
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -32,10 +33,13 @@ class _HomePageState extends State<HomePage> {
 
   // 当前用户ID，用于排除自己发布的商品
   int? _currentUserId;
-  
+
   // 未读消息数
   int _unreadMessageCount = 0;
-  
+
+  // 标记是否显示分类浏览而不是轮播图
+  bool _showCategoryInsteadOfCarousel = false;
+
   // 定时刷新消息计数的计时器
   // Timer? _messageRefreshTimer;
 
@@ -46,7 +50,7 @@ class _HomePageState extends State<HomePage> {
     _scrollController.addListener(_scrollListener);
     _getCurrentUserId();
     _fetchUnreadMessageCount();
-    
+
     // 设置定时刷新消息计数
     // _messageRefreshTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
     //   _fetchUnreadMessageCount();
@@ -90,37 +94,39 @@ class _HomePageState extends State<HomePage> {
       _fetchRecommendedProducts(isRefresh: true);
     }
   }
-  
+
   // 获取未读消息数量
   Future<void> _fetchUnreadMessageCount() async {
     try {
       // 获取买家未读消息
       final buyerResponse = await HttpUtil().get(Api.userConversations);
       int buyerUnread = 0;
-      
+
       if (buyerResponse.isSuccess && buyerResponse.data != null) {
         final List<dynamic> conversations = buyerResponse.data as List<dynamic>;
         for (var conv in conversations) {
-          buyerUnread += int.tryParse(conv['unreadCount']?.toString() ?? '0') ?? 0;
+          buyerUnread +=
+              int.tryParse(conv['unreadCount']?.toString() ?? '0') ?? 0;
         }
       }
-      
+
       // 获取卖家未读消息
       final sellerResponse = await HttpUtil().get(Api.sellerConversations);
       int sellerUnread = 0;
-      
+
       if (sellerResponse.isSuccess && sellerResponse.data != null) {
-        final List<dynamic> conversations = sellerResponse.data as List<dynamic>;
+        final List<dynamic> conversations =
+            sellerResponse.data as List<dynamic>;
         for (var conv in conversations) {
-          sellerUnread += int.tryParse(conv['unreadCount']?.toString() ?? '0') ?? 0;
+          sellerUnread +=
+              int.tryParse(conv['unreadCount']?.toString() ?? '0') ?? 0;
         }
       }
-      
+
       // 更新UI
       setState(() {
         _unreadMessageCount = buyerUnread + sellerUnread;
       });
-      
     } catch (e) {
       developer.log('获取未读消息数量异常: $e', name: 'HomePage');
     }
@@ -250,18 +256,19 @@ class _HomePageState extends State<HomePage> {
   Future<void> _createOrder(int productId) async {
     try {
       // 先获取商品详情数据
-      final detailResponse = await HttpUtil().get('${Api.productDetail}$productId');
+      final detailResponse =
+          await HttpUtil().get('${Api.productDetail}$productId');
 
       if (!mounted) return;
 
       if (detailResponse.isSuccess && detailResponse.data != null) {
         final productData = detailResponse.data as Map<String, dynamic>;
-        
+
         // 提取所需数据
         final String title = productData['title'] as String;
         final double price = productData['price'] as double;
         final int sellerId = productData['userId'] as int;
-        
+
         // 首先尝试从详情中获取主图URL
         String imageUrl = '';
         if (productData['mainImageUrl'] != null) {
@@ -274,20 +281,22 @@ class _HomePageState extends State<HomePage> {
             imageUrl = 'http://192.168.200.30:8080$imageUrl';
           }
         }
-        
+
         // 尝试获取商品图片列表，可能会包含更多图片
         try {
-          final imageResponse = await HttpUtil().get('${Api.imageList}$productId');
-          
+          final imageResponse =
+              await HttpUtil().get('${Api.imageList}$productId');
+
           if (imageResponse.isSuccess && imageResponse.data != null) {
             final List<dynamic> images = imageResponse.data as List<dynamic>;
-            
+
             if (images.isNotEmpty) {
               // 使用第一张图片作为主图
               String url = images.first['url'] as String? ?? '';
               if (url.isNotEmpty) {
                 if (url.startsWith('http://localhost:8080')) {
-                  url = url.replaceFirst('http://localhost:8080', 'http://192.168.200.30:8080');
+                  url = url.replaceFirst(
+                      'http://localhost:8080', 'http://192.168.200.30:8080');
                 } else if (url.startsWith('/files/')) {
                   url = 'http://192.168.200.30:8080$url';
                 }
@@ -299,7 +308,7 @@ class _HomePageState extends State<HomePage> {
           // 图片列表获取失败，继续使用主图
           developer.log('获取图片列表异常: $e', name: 'HomePage');
         }
-        
+
         // 跳转到订单创建页面
         Navigator.push(
           context,
@@ -331,38 +340,24 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('闲转', style: TextStyle(fontWeight: FontWeight.bold)),
-        elevation: 0,
+        title: const Text(
+          '闲转',
+          style: TextStyle(color: Color.fromARGB(255, 224, 148, 33)),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // 跳转到搜索页面
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SearchPage(),
-                ),
-              );
-            },
-          ),
-          // 消息图标带未读消息计数
+          // 消息图标
           Stack(
             alignment: Alignment.center,
             children: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {
-                  // 跳转到消息列表页面
+              IconButton(
+                icon: const Icon(Icons.message_outlined),
+                onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ConversationListPage(),
                     ),
-                  ).then((_) {
-                    // 返回后刷新未读消息数
-                    _fetchUnreadMessageCount();
-                  });
+                  );
                 },
               ),
               if (_unreadMessageCount > 0)
@@ -380,7 +375,9 @@ class _HomePageState extends State<HomePage> {
                       minHeight: 16,
                     ),
                     child: Text(
-                      _unreadMessageCount > 99 ? '99+' : '$_unreadMessageCount',
+                      _unreadMessageCount > 99
+                          ? '99+'
+                          : _unreadMessageCount.toString(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -395,7 +392,6 @@ class _HomePageState extends State<HomePage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          // 刷新时同时更新未读消息数
           await Future.wait([
             _fetchRecommendedProducts(isRefresh: true),
             _fetchUnreadMessageCount(),
@@ -435,8 +431,14 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 20),
 
-            // 分类区域
-            _buildCategorySection(),
+            // 促销活动轮播图
+            promotionCarouselSection(
+              onCarouselEmpty: () {
+                setState(() {
+                  _showCategoryInsteadOfCarousel = true;
+                });
+              },
+            ),
 
             const SizedBox(height: 20),
 
@@ -454,6 +456,33 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  // 封装轮播图或分类的逻辑为单独的组件
+  Widget promotionCarouselSection({required Function onCarouselEmpty}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 轮播图标题
+        const Text(
+          '精选活动',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+
+        // 轮播图组件，当没有有效轮播图且已触发onCarouselEmpty回调时显示分类
+        _showCategoryInsteadOfCarousel
+            ? _buildCategorySection()
+            : NotificationListener<CarouselEmptyNotification>(
+                onNotification: (notification) {
+                  // 当收到轮播图为空的通知时，触发回调并显示分类
+                  onCarouselEmpty();
+                  return true;
+                },
+                child: const PromotionCarousel(),
+              ),
+      ],
     );
   }
 
@@ -589,7 +618,7 @@ class _HomePageState extends State<HomePage> {
       } else if (imageUrl.startsWith('/files/')) {
         imageUrl = 'http://192.168.200.30:8080$imageUrl';
       }
-      
+
       // 更新商品数据中的图片URL，确保其他地方使用时是正确的
       product['mainImageUrl'] = imageUrl;
     }
@@ -760,12 +789,14 @@ class _HomePageState extends State<HomePage> {
                             child: ElevatedButton(
                               onPressed: () {
                                 // 直接使用product中的数据，包括已处理过的图片URL
-                                final int productId = product['productId'] as int;
+                                final int productId =
+                                    product['productId'] as int;
                                 final String title = product['title'] as String;
                                 final double price = product['price'] as double;
                                 final int sellerId = product['userId'] as int;
-                                final String imageUrl = product['mainImageUrl'] as String;
-                                
+                                final String imageUrl =
+                                    product['mainImageUrl'] as String;
+
                                 // 直接跳转到订单创建页面，避免再次请求API
                                 Navigator.push(
                                   context,
@@ -782,7 +813,8 @@ class _HomePageState extends State<HomePage> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 minimumSize: const Size(45, 24),
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),

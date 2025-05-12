@@ -1,7 +1,7 @@
 /// API接口管理类
 class Api {
   // 基础URL
-  static const String baseUrl = 'http://192.168.0.103:8080';
+  static const String baseUrl = 'http://192.168.200.30:8080';
 
   // 用户模块
   static const String userRegister = '/user/register'; // 用户注册
@@ -43,7 +43,8 @@ class Api {
   static const String favoriteCancel =
       '/product/favorite/'; // 取消收藏，需附加productId
   static const String favoriteList = '/product/favorite/list'; // 获取收藏列表
-  static const String favoriteCheck = '/product/favorite/check/'; // 检查是否已收藏，需附加productId
+  static const String favoriteCheck =
+      '/product/favorite/check/'; // 检查是否已收藏，需附加productId
 
   // 商品图片模块
   static const String imageAdd = '/product/image/add'; // 添加或批量添加商品图片
@@ -119,4 +120,9 @@ class Api {
   static const String alipayPay = '/alipay/pay'; // 支付宝支付
   static const String alipayNotify = '/alipay/notify'; // 支付宝异步回调
   static const String alipayReturn = '/alipay/return'; // 支付宝同步回调
+
+  // 营销活动模块
+  static const String promotionActive = '/promotion/active'; // 获取当前有效的营销活动列表
+  static const String promotionDetail =
+      '/promotion/detail/'; // 获取营销活动详情，需附加promotionId
 }
