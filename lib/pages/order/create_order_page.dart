@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import '../../config/theme.dart';
 import '../../network/api.dart';
 import '../../network/http_util.dart';
+import '../../utils/image_url_util.dart';
 import '../../models/order.dart';
 import '../../models/address.dart';
 import 'pending_payment_page.dart';
@@ -304,6 +305,9 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 处理图片URL
+    String imageUrl = ImageUrlUtil.processImageUrl(widget.imageUrl);
+    
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
@@ -325,329 +329,361 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 16.0),
-              child: Row(
-                children: [
-                  const Icon(Icons.timer, size: 16, color: Colors.orange),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatCountdown(),
-                    style: const TextStyle(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              child: Text(
+                _formatCountdown(),
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 商品信息卡片
-          Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 商品图片
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      widget.imageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[300],
-                          child: const Icon(
-                            Icons.image_not_supported,
-                            color: Colors.white,
-                          ),
-                        );
-                      },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 错误信息
+            if (_errorMessage.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                margin: const EdgeInsets.only(bottom: 16.0),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error, color: Colors.red),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.red),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // 商品信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                ),
+              ),
+
+            // 商品信息卡片
+            Card(
+              margin: const EdgeInsets.only(bottom: 16.0),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 商品图片
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4.0),
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.image_not_supported,
+                                    color: Colors.white,
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              width: 80,
+                              height: 80,
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.image,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                    
+                    const SizedBox(width: 12.0),
+                    
+                    // 商品信息
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.productTitle,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8.0),
+                          Text(
+                            '¥${widget.price.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // 收货地址选择卡片
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          widget.productTitle,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '¥${widget.price.toStringAsFixed(2)}',
+                        const Text(
+                          '收货地址',
                           style: TextStyle(
-                            color: AppTheme.primaryColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
+                        ),
+                        TextButton.icon(
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('新增地址'),
+                          onPressed: () {
+                            // 跳转到地址管理页面
+                            Navigator.pushNamed(context, '/address-management')
+                                .then((_) => _fetchAddresses());
+                          },
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
-          // 收货地址选择卡片
-          Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+                    const SizedBox(height: 8),
+                    if (_addressList.isEmpty)
                       const Text(
-                        '收货地址',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      TextButton.icon(
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('新增地址'),
-                        onPressed: () {
-                          // 跳转到地址管理页面
-                          Navigator.pushNamed(context, '/address-management')
-                              .then((_) => _fetchAddresses());
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_addressList.isEmpty)
-                    const Text(
-                      '您还没有添加收货地址',
-                      style: TextStyle(color: Colors.grey),
-                    )
-                  else
-                    Column(
-                      children: _addressList.map((address) {
-                        final bool isSelected = _selectedAddress == address;
-                        
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              _selectedAddress = address;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.grey[200]!,
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  isSelected
-                                      ? Icons.check_circle
-                                      : Icons.circle_outlined,
-                                  color: isSelected
-                                      ? AppTheme.primaryColor
-                                      : Colors.grey,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            address['consignee'] ?? '',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            address['contactPhone'] ?? '',
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${address['region'] ?? ''} ${address['detail'] ?? ''}',
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
+                        '您还没有添加收货地址',
+                        style: TextStyle(color: Colors.grey),
+                      )
+                    else
+                      Column(
+                        children: _addressList.map((address) {
+                          final bool isSelected = _selectedAddress == address;
+                          
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedAddress = address;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.grey[200]!,
+                                    width: 1,
                                   ),
                                 ),
-                              ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isSelected
+                                        ? Icons.check_circle
+                                        : Icons.circle_outlined,
+                                    color: isSelected
+                                        ? AppTheme.primaryColor
+                                        : Colors.grey,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              address['consignee'] ?? '',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              address['contactPhone'] ?? '',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${address['region'] ?? ''} ${address['detail'] ?? ''}',
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                ],
+                          );
+                        }).toList(),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          // 支付方式卡片
-          Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '支付方式',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+            
+            // 支付方式卡片
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '支付方式',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPaymentOption(
-                    icon: Icons.payment,
-                    title: '在线支付',
-                    value: 1,
-                    groupValue: _paymentType,
-                  ),
-                  _buildPaymentOption(
-                    icon: Icons.attach_money,
-                    title: '货到付款',
-                    value: 2,
-                    groupValue: _paymentType,
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    _buildPaymentOption(
+                      icon: Icons.payment,
+                      title: '在线支付',
+                      value: 1,
+                      groupValue: _paymentType,
+                    ),
+                    _buildPaymentOption(
+                      icon: Icons.attach_money,
+                      title: '货到付款',
+                      value: 2,
+                      groupValue: _paymentType,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          // 配送方式卡片
-          Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '配送方式',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+            
+            // 配送方式卡片
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '配送方式',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildDeliveryOption(
-                    icon: Icons.store,
-                    title: '上门自提',
-                    subtitle: '不收取运费',
-                    value: 1,
-                    groupValue: _deliveryType,
-                  ),
-                  _buildDeliveryOption(
-                    icon: Icons.local_shipping,
-                    title: '快递配送',
-                    subtitle: '¥${_deliveryFee.toStringAsFixed(2)}',
-                    value: 2,
-                    groupValue: _deliveryType,
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    _buildDeliveryOption(
+                      icon: Icons.store,
+                      title: '上门自提',
+                      subtitle: '不收取运费',
+                      value: 1,
+                      groupValue: _deliveryType,
+                    ),
+                    _buildDeliveryOption(
+                      icon: Icons.local_shipping,
+                      title: '快递配送',
+                      subtitle: '¥${_deliveryFee.toStringAsFixed(2)}',
+                      value: 2,
+                      groupValue: _deliveryType,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          // 订单备注卡片
-          Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '订单备注',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+            
+            // 订单备注卡片
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '订单备注',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _remarkController,
-                    decoration: const InputDecoration(
-                      hintText: '请输入订单备注(选填)',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.all(12),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _remarkController,
+                      decoration: const InputDecoration(
+                        hintText: '请输入订单备注(选填)',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.all(12),
+                      ),
+                      maxLines: 2,
+                      onChanged: (value) {
+                        setState(() {
+                          _remark = value;
+                        });
+                      },
                     ),
-                    maxLines: 2,
-                    onChanged: (value) {
-                      setState(() {
-                        _remark = value;
-                      });
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          // 订单金额汇总
-          Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '订单金额',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+            
+            // 订单金额汇总
+            Card(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '订单金额',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildOrderAmountRow('商品金额', '¥${widget.price.toStringAsFixed(2)}'),
-                  _buildOrderAmountRow('运费', '¥${_deliveryFee.toStringAsFixed(2)}'),
-                  const Divider(height: 24),
-                  _buildOrderAmountRow(
-                    '应付金额',
-                    '¥${(widget.price + _deliveryFee).toStringAsFixed(2)}',
-                    isTotal: true,
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    _buildOrderAmountRow('商品金额', '¥${widget.price.toStringAsFixed(2)}'),
+                    _buildOrderAmountRow('运费', '¥${_deliveryFee.toStringAsFixed(2)}'),
+                    const Divider(height: 24),
+                    _buildOrderAmountRow(
+                      '应付金额',
+                      '¥${(widget.price + _deliveryFee).toStringAsFixed(2)}',
+                      isTotal: true,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomBar(),
     );

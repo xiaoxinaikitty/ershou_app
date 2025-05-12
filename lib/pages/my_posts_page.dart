@@ -3,7 +3,9 @@ import 'dart:developer' as developer;
 import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
+import '../utils/image_url_util.dart'; // 引入图片URL处理工具类
 import 'publish_page.dart'; // 导入发布页面用于编辑功能
+import 'product_detail_page.dart'; // 导入商品详情页
 
 class MyPostsPage extends StatefulWidget {
   const MyPostsPage({Key? key}) : super(key: key);
@@ -437,16 +439,13 @@ class _MyPostsPageState extends State<MyPostsPage> {
         post['mainImage'] as String? ??
         '';
 
-    // 处理图片URL，将localhost替换为正确的服务器地址
-    if (imageUrl.isNotEmpty) {
-      if (imageUrl.startsWith('http://localhost:8080')) {
-        imageUrl = imageUrl.replaceFirst(
-            'http://localhost:8080', 'http://192.168.200.30:8080');
-      } else if (imageUrl.startsWith('/files/')) {
-        imageUrl = 'http://192.168.200.30:8080$imageUrl';
-      }
-      developer.log('处理后的图片URL: $imageUrl', name: 'MyPostsPage');
-    }
+    // 处理图片URL
+    imageUrl = ImageUrlUtil.processImageUrl(imageUrl);
+    
+    // 更新商品数据中的图片URL
+    post['mainImageUrl'] = imageUrl;
+    
+    developer.log('处理后的图片URL: $imageUrl', name: 'MyPostsPage');
 
     final status = post['status'] as int? ?? 1;
     final String statusText = _getStatusText(status);
@@ -577,8 +576,15 @@ class _MyPostsPageState extends State<MyPostsPage> {
                 TextButton(
                   onPressed: () {
                     // 查看商品详情
-                    // TODO: 实现商品详情页导航
-                    // Navigator.pushNamed(context, '/product_detail', arguments: productId);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailPage(
+                          productId: productId,
+                          mainImageUrl: imageUrl, // 传递处理过的图片URL
+                        ),
+                      ),
+                    );
                   },
                   child: const Text('查看详情'),
                 ),

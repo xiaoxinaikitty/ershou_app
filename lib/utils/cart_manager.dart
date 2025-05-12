@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
+import 'image_url_util.dart'; // 引入图片URL处理工具类
 
 class CartManager {
   static const String _cartKey = 'user_cart_items';
@@ -16,7 +17,16 @@ class CartManager {
       }
 
       final List<dynamic> cartList = json.decode(cartJson);
-      return List<Map<String, dynamic>>.from(cartList);
+      final List<Map<String, dynamic>> cartItems = List<Map<String, dynamic>>.from(cartList);
+      
+      // 更新所有商品的图片URL
+      for (var item in cartItems) {
+        if (item.containsKey('mainImageUrl')) {
+          item['mainImageUrl'] = ImageUrlUtil.processImageUrl(item['mainImageUrl'] as String?);
+        }
+      }
+      
+      return cartItems;
     } catch (e) {
       developer.log('获取购物车数据异常: $e', name: 'CartManager');
       return [];
@@ -38,22 +48,8 @@ class CartManager {
             (cartItems[existingIndex]['quantity'] as int) + 1;
       } else {
         // 如果不存在，添加到购物车，默认数量为1
-        String mainImageUrl = product['mainImageUrl'] as String? ?? '';
-        developer.log('原始图片URL: $mainImageUrl', name: 'CartManager');
-
-        if (mainImageUrl.isNotEmpty) {
-          if (mainImageUrl.startsWith('http://localhost:8080')) {
-            mainImageUrl = mainImageUrl.replaceFirst(
-                'http://localhost:8080', 'http://192.168.200.30:8080');
-            developer.log('转换后的图片URL: $mainImageUrl', name: 'CartManager');
-          } else if (mainImageUrl.startsWith('/files/')) {
-            mainImageUrl = 'http://192.168.200.30:8080$mainImageUrl';
-            developer.log('转换后的图片URL: $mainImageUrl', name: 'CartManager');
-          } else if (!mainImageUrl.startsWith('http')) {
-            developer.log('无效的图片URL格式: $mainImageUrl', name: 'CartManager');
-            mainImageUrl = '';
-          }
-        }
+        String mainImageUrl = ImageUrlUtil.processImageUrl(product['mainImageUrl'] as String?);
+        developer.log('处理后的图片URL: $mainImageUrl', name: 'CartManager');
 
         final Map<String, dynamic> cartItem = {
           'productId': product['productId'],
@@ -61,10 +57,10 @@ class CartManager {
           'price': product['price'],
           'mainImageUrl': mainImageUrl,
           'quantity': 1,
-          'sellerId': product['sellerId'] ?? 1,
+          'sellerId': product['sellerId'] ?? product['userId'] ?? 1,
         };
         cartItems.add(cartItem);
-        developer.log('添加商品到购物车: ${product['productId']}, 图片URL: $mainImageUrl, 卖家ID: ${product['sellerId'] ?? 1}',
+        developer.log('添加商品到购物车: ${product['productId']}, 图片URL: $mainImageUrl, 卖家ID: ${cartItem['sellerId']}',
             name: 'CartManager');
       }
 
@@ -109,15 +105,9 @@ class CartManager {
           cartItems.indexWhere((item) => item['productId'] == productId);
 
       if (index >= 0) {
-        if (imageUrl.isNotEmpty) {
-          if (imageUrl.startsWith('http://localhost:8080')) {
-            imageUrl = imageUrl.replaceFirst(
-                'http://localhost:8080', 'http://192.168.200.30:8080');
-          } else if (imageUrl.startsWith('/files/')) {
-            imageUrl = 'http://192.168.200.30:8080$imageUrl';
-          }
-        }
-
+        // 使用图片处理工具类处理URL
+        imageUrl = ImageUrlUtil.processImageUrl(imageUrl);
+        
         cartItems[index]['mainImageUrl'] = imageUrl;
         developer.log('更新商品图片URL: $productId, $imageUrl', name: 'CartManager');
         return await _saveCartItems(cartItems);

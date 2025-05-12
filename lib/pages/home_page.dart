@@ -4,6 +4,7 @@ import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart'; // 引入购物车管理工具类
+import '../utils/image_url_util.dart'; // 引入图片URL处理工具类
 import 'product_detail_page.dart'; // 假设有这个页面用于查看商品详情
 import 'search_page.dart'; // 导入搜索页面
 import 'chat/conversation_list_page.dart'; // 导入会话列表页面
@@ -174,6 +175,11 @@ class _HomePageState extends State<HomePage> {
                 product as Map<String, dynamic>;
             final int sellerId = productData['userId'] as int? ?? 0;
 
+            // 处理商品图片URL
+            productData['mainImageUrl'] = ImageUrlUtil.processImageUrl(
+              productData['mainImageUrl'] as String?
+            );
+
             // 排除自己发布的商品
             if (_currentUserId == null || sellerId != _currentUserId) {
               _products.add(productData);
@@ -269,18 +275,10 @@ class _HomePageState extends State<HomePage> {
         final double price = productData['price'] as double;
         final int sellerId = productData['userId'] as int;
 
-        // 首先尝试从详情中获取主图URL
-        String imageUrl = '';
-        if (productData['mainImageUrl'] != null) {
-          imageUrl = productData['mainImageUrl'] as String;
-          // 处理图片URL
-          if (imageUrl.startsWith('http://localhost:8080')) {
-            imageUrl = imageUrl.replaceFirst(
-                'http://localhost:8080', 'http://192.168.200.30:8080');
-          } else if (imageUrl.startsWith('/files/')) {
-            imageUrl = 'http://192.168.200.30:8080$imageUrl';
-          }
-        }
+        // 处理商品图片URL
+        String imageUrl = ImageUrlUtil.processImageUrl(
+          productData['mainImageUrl'] as String?
+        );
 
         // 尝试获取商品图片列表，可能会包含更多图片
         try {
@@ -294,13 +292,7 @@ class _HomePageState extends State<HomePage> {
               // 使用第一张图片作为主图
               String url = images.first['url'] as String? ?? '';
               if (url.isNotEmpty) {
-                if (url.startsWith('http://localhost:8080')) {
-                  url = url.replaceFirst(
-                      'http://localhost:8080', 'http://192.168.200.30:8080');
-                } else if (url.startsWith('/files/')) {
-                  url = 'http://192.168.200.30:8080$url';
-                }
-                imageUrl = url; // 更新图片URL
+                imageUrl = ImageUrlUtil.processImageUrl(url);
               }
             }
           }
@@ -610,18 +602,12 @@ class _HomePageState extends State<HomePage> {
     final username = product['username'] as String? ?? '未知用户';
 
     // 处理图片URL
-    String imageUrl = product['mainImageUrl'] as String? ?? '';
-    if (imageUrl.isNotEmpty) {
-      if (imageUrl.startsWith('http://localhost:8080')) {
-        imageUrl = imageUrl.replaceFirst(
-            'http://localhost:8080', 'http://192.168.200.30:8080');
-      } else if (imageUrl.startsWith('/files/')) {
-        imageUrl = 'http://192.168.200.30:8080$imageUrl';
-      }
+    String imageUrl = ImageUrlUtil.processImageUrl(
+      product['mainImageUrl'] as String?
+    );
 
-      // 更新商品数据中的图片URL，确保其他地方使用时是正确的
-      product['mainImageUrl'] = imageUrl;
-    }
+    // 更新商品数据中的图片URL，确保其他地方使用时是正确的
+    product['mainImageUrl'] = imageUrl;
 
     return Card(
       clipBehavior: Clip.antiAlias,

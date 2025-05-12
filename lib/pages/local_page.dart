@@ -3,6 +3,7 @@ import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart';
+import '../utils/image_url_util.dart';
 import 'product_detail_page.dart';
 import 'dart:developer' as developer;
 
@@ -180,6 +181,11 @@ class _LocalPageState extends State<LocalPage> {
                 product as Map<String, dynamic>;
             final int sellerId = productData['userId'] as int? ?? 0;
 
+            // 处理商品图片URL
+            productData['mainImageUrl'] = ImageUrlUtil.processImageUrl(
+              productData['mainImageUrl'] as String?
+            );
+
             if (_currentUserId == null || sellerId != _currentUserId) {
               _recommendedProducts.add(productData);
             }
@@ -276,6 +282,11 @@ class _LocalPageState extends State<LocalPage> {
             final Map<String, dynamic> productData =
                 product as Map<String, dynamic>;
             final int sellerId = productData['userId'] as int? ?? 0;
+
+            // 处理商品图片URL
+            productData['mainImageUrl'] = ImageUrlUtil.processImageUrl(
+              productData['mainImageUrl'] as String?
+            );
 
             if (_currentUserId == null || sellerId != _currentUserId) {
               _newestProducts.add(productData);
@@ -713,15 +724,13 @@ class _LocalPageState extends State<LocalPage> {
     final location = product['location'] as String? ?? '';
     final username = product['username'] as String? ?? '未知用户';
 
-    String imageUrl = product['mainImageUrl'] as String? ?? '';
-    if (imageUrl.isNotEmpty) {
-      if (imageUrl.startsWith('http://localhost:8080')) {
-        imageUrl = imageUrl.replaceFirst(
-            'http://localhost:8080', 'http://192.168.200.30:8080');
-      } else if (imageUrl.startsWith('/files/')) {
-        imageUrl = 'http://192.168.200.30:8080$imageUrl';
-      }
-    }
+    // 处理图片URL
+    String imageUrl = ImageUrlUtil.processImageUrl(
+      product['mainImageUrl'] as String?
+    );
+    
+    // 更新商品数据中的图片URL，确保其他地方使用时是正确的
+    product['mainImageUrl'] = imageUrl;
 
     return Card(
       clipBehavior: Clip.antiAlias,

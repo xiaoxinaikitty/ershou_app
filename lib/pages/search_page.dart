@@ -5,6 +5,7 @@ import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart';
+import '../utils/image_url_util.dart'; // 引入图片URL处理工具类
 import 'product_detail_page.dart';
 import 'dart:async'; // 导入Timer
 
@@ -581,15 +582,10 @@ class _SearchPageState extends State<SearchPage> {
     final username = product['username'] as String? ?? '未知用户';
 
     // 处理图片URL
-    String imageUrl = product['mainImageUrl'] as String? ?? '';
-    if (imageUrl.isNotEmpty) {
-      if (imageUrl.startsWith('http://localhost:8080')) {
-        imageUrl = imageUrl.replaceFirst(
-            'http://localhost:8080', 'http://192.168.200.30:8080');
-      } else if (imageUrl.startsWith('/files/')) {
-        imageUrl = 'http://192.168.200.30:8080$imageUrl';
-      }
-    }
+    String imageUrl = ImageUrlUtil.processImageUrl(product['mainImageUrl'] as String?);
+    
+    // 更新商品数据中的图片URL，确保其他地方使用时是正确的
+    product['mainImageUrl'] = imageUrl;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -604,7 +600,10 @@ class _SearchPageState extends State<SearchPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductDetailPage(productId: productId),
+              builder: (context) => ProductDetailPage(
+                productId: productId,
+                mainImageUrl: imageUrl, // 传递主图URL
+              ),
             ),
           );
         },

@@ -4,6 +4,7 @@ import '../config/theme.dart';
 import '../network/api.dart';
 import '../network/http_util.dart';
 import '../utils/cart_manager.dart';
+import '../utils/image_url_util.dart'; // 引入图片URL处理工具类
 import 'chat/message_page.dart'; // 导入消息页面
 import 'order/create_order_page.dart'; // 导入创建订单页面
 
@@ -34,20 +35,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     super.initState();
     // 如果有传入的主图URL，先添加到图片列表
     if (widget.mainImageUrl != null && widget.mainImageUrl!.isNotEmpty) {
-      String url = widget.mainImageUrl!;
-      developer.log('初始主图URL: $url', name: 'ProductDetailPage');
-
-      if (url.startsWith('http://localhost:8080')) {
-        url = url.replaceFirst(
-            'http://localhost:8080', 'http://192.168.200.30:8080');
-        developer.log('转换后的主图URL: $url', name: 'ProductDetailPage');
-      } else if (url.startsWith('/files/')) {
-        url = 'http://192.168.200.30:8080$url';
-        developer.log('转换后的主图URL: $url', name: 'ProductDetailPage');
-      } else if (!url.startsWith('http')) {
-        developer.log('无效的主图URL格式: $url', name: 'ProductDetailPage');
-        url = '';
-      }
+      String url = ImageUrlUtil.processImageUrl(widget.mainImageUrl);
+      developer.log('处理后的主图URL: $url', name: 'ProductDetailPage');
 
       if (url.isNotEmpty) {
         _imageUrls.add(url);
@@ -93,16 +82,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               _imageUrls = images
                   .map((img) {
                     String url = img['url'] as String? ?? '';
-                    developer.log('处理图片URL: $url', name: 'ProductDetailPage');
-
-                    if (url.isNotEmpty) {
-                      if (url.startsWith('http://localhost:8080')) {
-                        url = url.replaceFirst('http://localhost:8080',
-                            'http://192.168.200.30:8080');
-                      } else if (url.startsWith('/files/')) {
-                        url = 'http://192.168.200.30:8080$url';
-                      }
-                    }
+                    developer.log('原始图片URL: $url', name: 'ProductDetailPage');
+                    
+                    // 使用工具类处理URL
+                    url = ImageUrlUtil.processImageUrl(url);
+                    developer.log('处理后的图片URL: $url', name: 'ProductDetailPage');
+                    
                     return url;
                   })
                   .where((url) => url.isNotEmpty)
@@ -112,14 +97,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             developer.log('图片列表API失败，尝试从商品详情获取图片', name: 'ProductDetailPage');
             // 从商品详情中获取图片
             if (_productData?['mainImageUrl'] != null) {
-              String url = _productData?['mainImageUrl'] as String;
+              String url = ImageUrlUtil.processImageUrl(_productData?['mainImageUrl'] as String);
               if (url.isNotEmpty) {
-                if (url.startsWith('http://localhost:8080')) {
-                  url = url.replaceFirst(
-                      'http://localhost:8080', 'http://192.168.200.30:8080');
-                } else if (url.startsWith('/files/')) {
-                  url = 'http://192.168.200.30:8080$url';
-                }
                 _imageUrls.add(url);
               }
             }
@@ -251,7 +230,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (_imageUrls.isNotEmpty) {
       imageUrl = _imageUrls[0];
     } else if (_productData!['mainImageUrl'] != null) {
-      imageUrl = _productData!['mainImageUrl'] as String;
+      imageUrl = ImageUrlUtil.processImageUrl(_productData!['mainImageUrl'] as String);
     }
     
     // 跳转到订单创建页面
@@ -281,9 +260,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     final int sellerId = _productData!['userId'] as int? ?? 0;
     final String sellerName = _productData!['username'] as String? ?? '卖家';
     final String productTitle = _productData!['title'] as String? ?? '商品详情';
-    final String productImage = _imageUrls.isNotEmpty
-        ? _imageUrls[0]
-        : (_productData!['mainImageUrl'] as String? ?? '');
+    String productImage = '';
+    
+    if (_imageUrls.isNotEmpty) {
+      productImage = _imageUrls[0];
+    } else if (_productData!['mainImageUrl'] != null) {
+      productImage = ImageUrlUtil.processImageUrl(_productData!['mainImageUrl'] as String?);
+    }
 
     if (sellerId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -362,6 +345,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         String currentImageUrl =
             _imageUrls.isNotEmpty ? _imageUrls[0] : widget.mainImageUrl ?? '';
         if (currentImageUrl.isNotEmpty) {
+          // 确保URL是经过处理的
+          currentImageUrl = ImageUrlUtil.processImageUrl(currentImageUrl);
           await CartManager.updateImageUrl(widget.productId, currentImageUrl);
         }
         Navigator.of(context).pop(currentImageUrl);
@@ -595,7 +580,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             mainImageUrl = _imageUrls[0]; // 使用第一张图片作为主图
                           } else if (_productData!['mainImageUrl'] != null) {
                             mainImageUrl =
-                                _productData!['mainImageUrl'] as String;
+                                ImageUrlUtil.processImageUrl(_productData!['mainImageUrl'] as String);
                           }
 
                           // 创建要添加到购物车的数据

@@ -3,6 +3,7 @@ import 'package:ershou_app/pages/auth/login_page.dart';
 import 'package:flutter/material.dart';
 import 'config/theme.dart';
 import 'network/api.dart';
+import 'utils/image_checker.dart';
 import 'pages/auth/register_page.dart';
 import 'pages/main_container.dart';
 import 'pages/address_management_page.dart';
@@ -14,6 +15,9 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // 初始化 HttpUtil（单例模式，只需执行一次）
   HttpUtil();
+  
+  // 初始化图片检查器，检查并修复图片URL
+  ImageChecker.initialize();
 
   runApp(const MyApp());
 }
