@@ -3,6 +3,7 @@ import '../models/product_recommend.dart';
 import '../utils/image_url_util.dart';
 import '../pages/product_detail_page.dart';
 import '../services/recommendation_service.dart';
+import '../network/api.dart';
 import 'dart:developer' as developer;
 
 /// 推荐商品网格组件
@@ -70,8 +71,18 @@ class ProductRecommendationGrid extends StatelessWidget {
   }
 
   Widget _buildProductItem(BuildContext context, ProductRecommend product) {
-    // 处理图片URL
+    // 确保图片URL已处理过，但再处理一次以防万一
     String imageUrl = ImageUrlUtil.processImageUrl(product.mainImage);
+    
+    // 检测URL是否为示例URL或无效URL
+    if (imageUrl.contains('example.com') || imageUrl.isEmpty) {
+      // 使用默认图片替代
+      imageUrl = '${Uri.parse(Api.baseUrl).origin}/images/default_product.png';
+      developer.log('检测到示例URL，使用默认图片: $imageUrl', name: 'ProductRecommendationGrid');
+    } else {
+      // 调试日志
+      developer.log('使用有效图片URL: $imageUrl', name: 'ProductRecommendationGrid');
+    }
 
     return GestureDetector(
       onTap: () {
@@ -107,9 +118,24 @@ class ProductRecommendationGrid extends StatelessWidget {
                     imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child:
-                            Icon(Icons.image_not_supported, color: Colors.grey),
+                      developer.log('图片加载失败: $error, URL: $imageUrl', name: 'ProductRecommendationGrid');
+                      // 尝试使用另一个默认图片或者显示占位符
+                      return Container(
+                        color: Colors.grey[200],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.image_not_supported, color: Colors.grey[400], size: 32),
+                            const SizedBox(height: 4),
+                            Text(
+                              product.title.substring(0, product.title.length > 10 ? 10 : product.title.length),
+                              style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       );
                     },
                     loadingBuilder: (context, child, loadingProgress) {

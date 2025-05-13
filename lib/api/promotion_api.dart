@@ -1,5 +1,7 @@
 import '../network/http_util.dart';
 import '../network/api.dart';
+import '../utils/image_url_util.dart';
+import 'dart:developer' as developer;
 
 class PromotionApi {
   /// 获取当前有效的促销活动列表
@@ -12,19 +14,45 @@ class PromotionApi {
         params = {'limit': limit};
       }
 
+      developer.log('开始获取促销活动列表', name: 'PromotionApi');
       final response =
           await HttpUtil().get(Api.promotionActive, params: params);
 
       if (response.isSuccess && response.data != null) {
         final List<dynamic> promotionList = response.data as List<dynamic>;
-        return promotionList
-            .map((item) => item as Map<String, dynamic>)
-            .toList();
+        
+        // 处理每个活动中的图片URL
+        final List<Map<String, dynamic>> processedPromotions = [];
+        for (var item in promotionList) {
+          final Map<String, dynamic> promotion = item as Map<String, dynamic>;
+          
+          // 处理活动中的图片URL
+          if (promotion.containsKey('images') && promotion['images'] is List) {
+            final List<dynamic> images = promotion['images'] as List<dynamic>;
+            for (var i = 0; i < images.length; i++) {
+              if (images[i] is Map && images[i].containsKey('imageUrl')) {
+                final String originalUrl = images[i]['imageUrl'] as String? ?? '';
+                final String processedUrl = ImageUrlUtil.processImageUrl(originalUrl);
+                images[i]['imageUrl'] = processedUrl;
+                
+                developer.log('处理活动图片URL: $originalUrl -> $processedUrl', 
+                    name: 'PromotionApi');
+              }
+            }
+          }
+          
+          processedPromotions.add(promotion);
+        }
+        
+        developer.log('获取到 ${processedPromotions.length} 个促销活动', 
+            name: 'PromotionApi');
+        return processedPromotions;
       }
 
+      developer.log('获取促销活动列表失败: ${response.message}', name: 'PromotionApi');
       return [];
     } catch (e) {
-      print('获取促销活动列表失败: $e');
+      developer.log('获取促销活动列表异常: $e', name: 'PromotionApi');
       return [];
     }
   }

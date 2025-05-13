@@ -1,7 +1,7 @@
 /// API接口管理类
 class Api {
   // 基础URL
-  static const String baseUrl = 'http://192.168.200.30:8080';
+  static const String baseUrl = 'http://192.168.0.104:8080';
 
   // 用户模块
   static const String userRegister = '/user/register'; // 用户注册

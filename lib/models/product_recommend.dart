@@ -1,3 +1,6 @@
+import '../utils/image_url_util.dart';
+import 'dart:developer' as developer;
+
 /// 推荐商品模型类
 class ProductRecommend {
   final int productId;
@@ -20,12 +23,27 @@ class ProductRecommend {
 
   /// 从JSON转换为对象
   factory ProductRecommend.fromJson(Map<String, dynamic> json) {
+    // 获取原始图片URL
+    String mainImageUrl = json['mainImage'] as String? ?? '';
+    developer.log('ProductRecommend解析前图片URL: $mainImageUrl', name: 'ProductRecommend');
+    
+    // 检测是否为空或为示例URL
+    if (mainImageUrl.isEmpty || mainImageUrl.contains('example.com')) {
+      // 使用相对路径替代
+      mainImageUrl = '/images/product_${json['productId'] ?? 'default'}.jpg';
+      developer.log('检测到空URL或示例URL，使用默认图片路径: $mainImageUrl', name: 'ProductRecommend');
+    }
+    
+    // 处理图片URL
+    mainImageUrl = ImageUrlUtil.processImageUrl(mainImageUrl);
+    developer.log('ProductRecommend解析后图片URL: $mainImageUrl', name: 'ProductRecommend');
+    
     return ProductRecommend(
       productId: json['productId'] as int? ?? 0,
       title: json['title'] as String? ?? '',
       price: _parseDouble(json['price']),
       originalPrice: _parseDouble(json['originalPrice']),
-      mainImage: json['mainImage'] as String? ?? '',
+      mainImage: mainImageUrl,
       score: _parseDouble(json['score']),
       recommendationType: json['recommendationType'] as int? ?? 0,
     );

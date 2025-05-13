@@ -15,30 +15,46 @@ class ImageUrlUtil {
     // 获取当前baseUrl
     final currentBaseUrl = Api.baseUrl;
     
+    // 记录处理前的URL
+    developer.log('处理前的图片URL: $url', name: 'ImageUrlUtil');
+    
     // 处理相对路径
     if (url.startsWith('/')) {
-      return '$currentBaseUrl$url';
+      final processed = '$currentBaseUrl$url';
+      developer.log('处理后的图片URL(相对路径): $processed', name: 'ImageUrlUtil');
+      return processed;
     }
     
-    // 处理包含localhost的URL
-    if (url.contains('http://localhost:8080')) {
-      return url.replaceFirst('http://localhost:8080', currentBaseUrl);
+    // 从currentBaseUrl中提取当前使用的host部分
+    String currentHost = currentBaseUrl;
+    if (currentBaseUrl.startsWith('http://')) {
+      currentHost = currentBaseUrl.substring(7); // 去掉http://
+    } else if (currentBaseUrl.startsWith('https://')) {
+      currentHost = currentBaseUrl.substring(8); // 去掉https://
     }
     
-    // 处理包含固定IP的URL (例如192.168.200.30)
-    if (url.contains('192.168.200.30:8080')) {
-      return url.replaceFirst('http://192.168.200.30:8080', currentBaseUrl);
-    }
-    
-    // 其他包含固定IP的可能性
-    final regExp = RegExp(r'http://192\.168\.\d+\.\d+:8080');
+    // 通用的替换逻辑 - 替换任何IP或域名
+    // 正则表达式匹配形如 http://192.168.0.103:8080 的协议+域名或IP+端口
+    final RegExp regExp = RegExp(r'(https?://)([^/]+)');
     if (regExp.hasMatch(url)) {
-      return regExp.stringMatch(url) != null 
-          ? url.replaceFirst(regExp, currentBaseUrl) 
-          : url;
+      final match = regExp.firstMatch(url);
+      if (match != null) {
+        final String oldProtocolAndHost = url.substring(match.start, match.end);
+        developer.log('找到需要替换的URL部分: $oldProtocolAndHost', name: 'ImageUrlUtil');
+        
+        // 替换为当前baseUrl
+        String processed = url.replaceFirst(oldProtocolAndHost, currentBaseUrl);
+        
+        // 避免处理后的URL有多余的斜杠
+        processed = processed.replaceAll('///', '//').replaceAll('//', '//');
+        
+        developer.log('处理后的图片URL(替换域名): $processed', name: 'ImageUrlUtil');
+        return processed;
+      }
     }
     
-    // 如果没有需要处理的情况，返回原URL
+    // 如果以上替换都不适用，直接返回原URL
+    developer.log('未能处理图片URL，返回原始值: $url', name: 'ImageUrlUtil');
     return url;
   }
 
