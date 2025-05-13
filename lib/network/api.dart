@@ -148,4 +148,14 @@ class Api {
   static const String dataUserActive = '/data/analysis/user/active'; // 获取活跃用户统计
   static const String dataProductHot = '/data/analysis/product/hot'; // 获取热门商品
   static const String dataCustom = '/data/analysis/custom'; // 自定义日期范围数据分析
+
+  // 推荐模块
+  static const String recommendBehavior =
+      '/api/recommendation/behavior'; // 记录用户行为
+  static const String recommendSimilar =
+      '/api/recommendation/similar'; // 获取相似商品推荐
+  static const String recommendPersonalized =
+      '/api/recommendation/personalized'; // 获取个性化推荐
+  static const String recommendHot = '/api/recommendation/hot'; // 获取热门推荐
+  static const String recommendClick = '/api/recommendation/click'; // 记录推荐点击
 }

@@ -10,6 +10,9 @@ import 'search_page.dart'; // 导入搜索页面
 import 'chat/conversation_list_page.dart'; // 导入会话列表页面
 import 'order/create_order_page.dart'; // 导入创建订单页面
 import '../widgets/promotion_carousel.dart'; // 导入营销活动轮播图组件
+import '../services/recommendation_service.dart';
+import '../models/product_recommend.dart';
+import '../widgets/product_recommendation_grid.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -41,6 +44,12 @@ class _HomePageState extends State<HomePage> {
   // 标记是否显示分类浏览而不是轮播图
   bool _showCategoryInsteadOfCarousel = false;
 
+  // 推荐相关属性
+  List<ProductRecommend> _personalizedRecommendations = [];
+  List<ProductRecommend> _hotRecommendations = [];
+  bool _loadingPersonalized = false;
+  bool _loadingHot = false;
+
   // 定时刷新消息计数的计时器
   // Timer? _messageRefreshTimer;
 
@@ -51,6 +60,9 @@ class _HomePageState extends State<HomePage> {
     _scrollController.addListener(_scrollListener);
     _getCurrentUserId();
     _fetchUnreadMessageCount();
+
+    // 加载推荐商品
+    _fetchRecommendations();
 
     // 设置定时刷新消息计数
     // _messageRefreshTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -133,6 +145,66 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // 获取推荐商品
+  Future<void> _fetchRecommendations() async {
+    setState(() {
+      _loadingPersonalized = true;
+      _loadingHot = true;
+    });
+
+    try {
+      // 获取个性化推荐
+      _fetchPersonalizedRecommendations();
+
+      // 获取热门推荐
+      _fetchHotRecommendations();
+    } catch (e) {
+      developer.log('获取推荐商品异常: $e', name: 'HomePage');
+    }
+  }
+
+  // 获取个性化推荐
+  Future<void> _fetchPersonalizedRecommendations() async {
+    try {
+      final recommendations = await RecommendationService()
+          .getPersonalizedRecommendations(limit: 10);
+
+      setState(() {
+        _personalizedRecommendations = recommendations;
+        _loadingPersonalized = false;
+      });
+
+      developer.log('获取个性化推荐成功: ${_personalizedRecommendations.length}条数据',
+          name: 'HomePage');
+    } catch (e) {
+      setState(() {
+        _loadingPersonalized = false;
+      });
+      developer.log('获取个性化推荐异常: $e', name: 'HomePage');
+    }
+  }
+
+  // 获取热门推荐
+  Future<void> _fetchHotRecommendations() async {
+    try {
+      final recommendations =
+          await RecommendationService().getHotRecommendations(limit: 10);
+
+      setState(() {
+        _hotRecommendations = recommendations;
+        _loadingHot = false;
+      });
+
+      developer.log('获取热门推荐成功: ${_hotRecommendations.length}条数据',
+          name: 'HomePage');
+    } catch (e) {
+      setState(() {
+        _loadingHot = false;
+      });
+      developer.log('获取热门推荐异常: $e', name: 'HomePage');
+    }
+  }
+
   // 获取推荐商品列表
   Future<void> _fetchRecommendedProducts({bool isRefresh = false}) async {
     if (isRefresh) {
@@ -177,8 +249,7 @@ class _HomePageState extends State<HomePage> {
 
             // 处理商品图片URL
             productData['mainImageUrl'] = ImageUrlUtil.processImageUrl(
-              productData['mainImageUrl'] as String?
-            );
+                productData['mainImageUrl'] as String?);
 
             // 排除自己发布的商品
             if (_currentUserId == null || sellerId != _currentUserId) {
@@ -277,8 +348,7 @@ class _HomePageState extends State<HomePage> {
 
         // 处理商品图片URL
         String imageUrl = ImageUrlUtil.processImageUrl(
-          productData['mainImageUrl'] as String?
-        );
+            productData['mainImageUrl'] as String?);
 
         // 尝试获取商品图片列表，可能会包含更多图片
         try {
@@ -384,10 +454,10 @@ class _HomePageState extends State<HomePage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait([
-            _fetchRecommendedProducts(isRefresh: true),
-            _fetchUnreadMessageCount(),
-          ]);
+          // 重新加载推荐商品
+          await _fetchRecommendations();
+          // 重新加载普通商品列表
+          await _fetchRecommendedProducts(isRefresh: true);
         },
         child: ListView(
           controller: _scrollController,
@@ -433,6 +503,40 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 20),
+
+            // 个性化推荐部分
+            if (_personalizedRecommendations.isNotEmpty)
+              ProductRecommendationGrid(
+                recommendations: _personalizedRecommendations,
+                title: '猜你喜欢',
+                showRecommendationType: false,
+                onRefresh: _fetchPersonalizedRecommendations,
+              ),
+
+            if (_loadingPersonalized)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+
+            const SizedBox(height: 16.0),
+
+            // 热门推荐部分
+            if (_hotRecommendations.isNotEmpty)
+              ProductRecommendationGrid(
+                recommendations: _hotRecommendations,
+                title: '热门推荐',
+                showRecommendationType: false,
+                onRefresh: _fetchHotRecommendations,
+              ),
+
+            if (_loadingHot)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+
+            const SizedBox(height: 16.0),
 
             // 推荐商品区域
             _buildRecommendedProductsSection(),
@@ -602,9 +706,8 @@ class _HomePageState extends State<HomePage> {
     final username = product['username'] as String? ?? '未知用户';
 
     // 处理图片URL
-    String imageUrl = ImageUrlUtil.processImageUrl(
-      product['mainImageUrl'] as String?
-    );
+    String imageUrl =
+        ImageUrlUtil.processImageUrl(product['mainImageUrl'] as String?);
 
     // 更新商品数据中的图片URL，确保其他地方使用时是正确的
     product['mainImageUrl'] = imageUrl;
