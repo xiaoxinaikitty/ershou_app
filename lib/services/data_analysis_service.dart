@@ -13,15 +13,17 @@ import 'package:ershou_app/network/http_util.dart';
 
 /// 数据分析服务类
 class DataAnalysisService {
+  static final _httpUtil = HttpUtil();
+
   /// 获取数据摘要
   static Future<DataSummary> getDataSummary() async {
-    final response = await HttpUtil.get(Api.dataSummary);
+    final response = await _httpUtil.get(Api.dataSummary);
     return DataSummary.fromJson(response.data);
   }
 
   /// 获取商品分类统计
   static Future<List<CategoryAnalysis>> getProductCategoryAnalysis() async {
-    final response = await HttpUtil.get(Api.dataProductCategory);
+    final response = await _httpUtil.get(Api.dataProductCategory);
     return (response.data as List)
         .map((item) => CategoryAnalysis.fromJson(item))
         .toList();
@@ -29,7 +31,7 @@ class DataAnalysisService {
 
   /// 获取商品价格区间统计
   static Future<List<PriceRangeAnalysis>> getProductPriceRangeAnalysis() async {
-    final response = await HttpUtil.get(Api.dataProductPriceRange);
+    final response = await _httpUtil.get(Api.dataProductPriceRange);
     return (response.data as List)
         .map((item) => PriceRangeAnalysis.fromJson(item))
         .toList();
@@ -37,7 +39,7 @@ class DataAnalysisService {
 
   /// 获取商品成色统计
   static Future<List<ConditionAnalysis>> getProductConditionAnalysis() async {
-    final response = await HttpUtil.get(Api.dataProductCondition);
+    final response = await _httpUtil.get(Api.dataProductCondition);
     return (response.data as List)
         .map((item) => ConditionAnalysis.fromJson(item))
         .toList();
@@ -45,7 +47,7 @@ class DataAnalysisService {
 
   /// 获取商品状态统计
   static Future<List<StatusAnalysis>> getProductStatusAnalysis() async {
-    final response = await HttpUtil.get(Api.dataProductStatus);
+    final response = await _httpUtil.get(Api.dataProductStatus);
     return (response.data as List)
         .map((item) => StatusAnalysis.fromJson(item))
         .toList();
@@ -53,7 +55,7 @@ class DataAnalysisService {
 
   /// 获取商品发布趋势
   static Future<List<TrendAnalysis>> getProductTrend({int days = 30}) async {
-    final response = await HttpUtil.get(
+    final response = await _httpUtil.get(
       Api.dataProductTrend,
       params: {'days': days},
     );
@@ -63,8 +65,9 @@ class DataAnalysisService {
   }
 
   /// 获取用户注册趋势
-  static Future<List<TrendAnalysis>> getUserRegisterTrend({int days = 30}) async {
-    final response = await HttpUtil.get(
+  static Future<List<TrendAnalysis>> getUserRegisterTrend(
+      {int days = 30}) async {
+    final response = await _httpUtil.get(
       Api.dataUserRegisterTrend,
       params: {'days': days},
     );
@@ -75,7 +78,7 @@ class DataAnalysisService {
 
   /// 获取订单趋势
   static Future<List<TrendAnalysis>> getOrderTrend({int days = 30}) async {
-    final response = await HttpUtil.get(
+    final response = await _httpUtil.get(
       Api.dataOrderTrend,
       params: {'days': days},
     );
@@ -85,8 +88,9 @@ class DataAnalysisService {
   }
 
   /// 获取订单金额趋势
-  static Future<List<AmountTrendAnalysis>> getOrderAmountTrend({int days = 30}) async {
-    final response = await HttpUtil.get(
+  static Future<List<AmountTrendAnalysis>> getOrderAmountTrend(
+      {int days = 30}) async {
+    final response = await _httpUtil.get(
       Api.dataOrderAmountTrend,
       params: {'days': days},
     );
@@ -97,15 +101,16 @@ class DataAnalysisService {
 
   /// 获取订单状态统计
   static Future<List<StatusAnalysis>> getOrderStatusAnalysis() async {
-    final response = await HttpUtil.get(Api.dataOrderStatus);
+    final response = await _httpUtil.get(Api.dataOrderStatus);
     return (response.data as List)
         .map((item) => StatusAnalysis.fromJson(item))
         .toList();
   }
 
   /// 获取活跃用户统计
-  static Future<List<UserActiveAnalysis>> getUserActiveAnalysis({int days = 30}) async {
-    final response = await HttpUtil.get(
+  static Future<List<UserActiveAnalysis>> getUserActiveAnalysis(
+      {int days = 30}) async {
+    final response = await _httpUtil.get(
       Api.dataUserActive,
       params: {'days': days},
     );
@@ -116,7 +121,7 @@ class DataAnalysisService {
 
   /// 获取热门商品
   static Future<List<HotProduct>> getHotProducts({int limit = 10}) async {
-    final response = await HttpUtil.get(
+    final response = await _httpUtil.get(
       Api.dataProductHot,
       params: {'limit': limit},
     );
@@ -130,7 +135,7 @@ class DataAnalysisService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    final response = await HttpUtil.get(
+    final response = await _httpUtil.get(
       Api.dataCustom,
       params: {
         'startDate': startDate.toIso8601String().split('T')[0],
@@ -139,4 +144,4 @@ class DataAnalysisService {
     );
     return CustomAnalysis.fromJson(response.data);
   }
-} 
+}

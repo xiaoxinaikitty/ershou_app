@@ -1,7 +1,7 @@
 /// API接口管理类
 class Api {
   // 基础URL
-  static const String baseUrl = 'http://192.168.0.104:8080';
+  static const String baseUrl = 'http://192.168.200.30:8080';
 
   // 用户模块
   static const String userRegister = '/user/register'; // 用户注册
@@ -128,15 +128,23 @@ class Api {
 
   // 数据分析模块
   static const String dataSummary = '/data/analysis/summary'; // 获取数据摘要
-  static const String dataProductCategory = '/data/analysis/product/category'; // 获取商品分类统计
-  static const String dataProductPriceRange = '/data/analysis/product/price/range'; // 获取商品价格区间统计
-  static const String dataProductCondition = '/data/analysis/product/condition'; // 获取商品成色统计
-  static const String dataProductStatus = '/data/analysis/product/status'; // 获取商品状态统计
-  static const String dataProductTrend = '/data/analysis/product/trend'; // 获取商品发布趋势
-  static const String dataUserRegisterTrend = '/data/analysis/user/register/trend'; // 获取用户注册趋势
+  static const String dataProductCategory =
+      '/data/analysis/product/category'; // 获取商品分类统计
+  static const String dataProductPriceRange =
+      '/data/analysis/product/price/range'; // 获取商品价格区间统计
+  static const String dataProductCondition =
+      '/data/analysis/product/condition'; // 获取商品成色统计
+  static const String dataProductStatus =
+      '/data/analysis/product/status'; // 获取商品状态统计
+  static const String dataProductTrend =
+      '/data/analysis/product/trend'; // 获取商品发布趋势
+  static const String dataUserRegisterTrend =
+      '/data/analysis/user/register/trend'; // 获取用户注册趋势
   static const String dataOrderTrend = '/data/analysis/order/trend'; // 获取订单趋势
-  static const String dataOrderAmountTrend = '/data/analysis/order/amount/trend'; // 获取订单金额趋势
-  static const String dataOrderStatus = '/data/analysis/order/status'; // 获取订单状态统计
+  static const String dataOrderAmountTrend =
+      '/data/analysis/order/amount/trend'; // 获取订单金额趋势
+  static const String dataOrderStatus =
+      '/data/analysis/order/status'; // 获取订单状态统计
   static const String dataUserActive = '/data/analysis/user/active'; // 获取活跃用户统计
   static const String dataProductHot = '/data/analysis/product/hot'; // 获取热门商品
   static const String dataCustom = '/data/analysis/custom'; // 自定义日期范围数据分析
