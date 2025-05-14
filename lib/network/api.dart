@@ -1,7 +1,7 @@
 /// API接口管理类
 class Api {
   // 基础URL
-  static const String baseUrl = 'http://192.168.0.104:8080';
+  static const String baseUrl = 'http://192.168.200.30:8080';
 
   // 用户模块
   static const String userRegister = '/user/register'; // 用户注册
@@ -68,6 +68,12 @@ class Api {
   static const String orderDetail = '/order/detail/'; // 获取订单详情，需附加orderId
   static const String orderNotifyShipment = '/order/notify-shipment'; // 通知发货
   static const String orderConfirmReceipt = '/order/confirm-receipt'; // 确认收货
+
+  // 支付模块
+  static const String pendingPaymentList =
+      '/payment/pending-payment/list'; // 获取待付款商品列表
+  static const String waitingShipmentList =
+      '/payment/waiting-shipment/list'; // 获取待发货商品列表
 
   // 订单消息模块
   static const String messageSend = '/message/send'; // 发送订单消息

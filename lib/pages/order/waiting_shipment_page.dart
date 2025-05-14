@@ -3,7 +3,9 @@ import '../../models/order.dart';
 import '../../network/api.dart';
 import '../../network/http_util.dart';
 import '../../config/theme.dart';
+import '../../utils/image_url_util.dart';
 import 'dart:developer' as developer;
+import 'dart:math';
 
 class WaitingShipmentPage extends StatefulWidget {
   const WaitingShipmentPage({Key? key}) : super(key: key);
@@ -14,6 +16,7 @@ class WaitingShipmentPage extends StatefulWidget {
 
 class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
   List<Order> _waitingShipmentOrders = [];
+  final Map<int, String> _productImages = {};
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
@@ -32,16 +35,17 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
     });
 
     try {
-      developer.log('开始请求待发货订单列表: ${Api.orderList}',
+      developer.log('开始请求待发货订单列表: ${Api.waitingShipmentList}',
           name: 'WaitingShipmentPage');
 
-      final response = await HttpUtil().get(Api.orderList);
+      // 使用专用接口获取待发货订单列表
+      final response = await HttpUtil().get(Api.waitingShipmentList);
 
-      developer.log('订单列表响应: ${response.code}, ${response.message}',
+      developer.log('待发货订单列表响应: ${response.code}, ${response.message}',
           name: 'WaitingShipmentPage');
 
       if (response.isSuccess && response.data != null) {
-        developer.log('订单数据: ${response.data}', name: 'WaitingShipmentPage');
+        developer.log('待发货订单数据: ${response.data}', name: 'WaitingShipmentPage');
 
         // 处理响应数据
         List<dynamic> ordersData = [];
@@ -51,20 +55,34 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
           ordersData = response.data['orders'] as List<dynamic>;
         }
 
-        // 解析订单数据，筛选出待发货订单(orderStatus=1)
+        // 解析订单数据
         List<Order> orders = [];
         for (var orderJson in ordersData) {
           try {
             final order = Order.fromJson(orderJson);
-            if (order.orderStatus == 1) {
-              // 筛选待发货订单
-              orders.add(order);
-            }
+            orders.add(order);
+
+            // 主动为所有订单获取图片
+            _fetchProductImage(order.productId);
           } catch (e) {
             developer.log('订单解析错误: $e, 订单数据: $orderJson',
                 name: 'WaitingShipmentPage');
           }
         }
+
+        // 按照下单时间（createdTime）降序排序订单，最新的订单排在前面
+        orders.sort((a, b) {
+          // 解析下单时间，转换为DateTime进行比较
+          DateTime? timeA = _parseDateTime(a.createdTime);
+          DateTime? timeB = _parseDateTime(b.createdTime);
+
+          // 如果日期解析出错，使用当前时间作为备用
+          timeA ??= DateTime.now();
+          timeB ??= DateTime.now();
+
+          // 降序排列，最新的在前面
+          return timeB.compareTo(timeA);
+        });
 
         setState(() {
           _waitingShipmentOrders = orders;
@@ -74,11 +92,11 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
         setState(() {
           _isLoading = false;
           _hasError = true;
-          _errorMessage = response.message ?? '获取订单失败';
+          _errorMessage = response.message ?? '获取待发货订单失败';
         });
       }
     } catch (e) {
-      developer.log('订单列表请求异常: $e', name: 'WaitingShipmentPage', error: e);
+      developer.log('待发货订单列表请求异常: $e', name: 'WaitingShipmentPage', error: e);
 
       setState(() {
         _isLoading = false;
@@ -86,6 +104,202 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
         _errorMessage = '网络错误，请稍后再试 ($e)';
       });
     }
+  }
+
+  // 解析日期时间字符串为DateTime对象
+  DateTime? _parseDateTime(String dateTimeStr) {
+    try {
+      // 尝试解析标准格式的日期时间
+      return DateTime.parse(dateTimeStr);
+    } catch (e) {
+      try {
+        // 如果标准格式解析失败，尝试解析常见的自定义格式
+        // "yyyy-MM-dd HH:mm:ss" 格式
+        final parts = dateTimeStr.split(' ');
+        if (parts.length == 2) {
+          final dateParts = parts[0].split('-');
+          final timeParts = parts[1].split(':');
+
+          if (dateParts.length == 3 && timeParts.length >= 2) {
+            return DateTime(
+              int.parse(dateParts[0]), // 年
+              int.parse(dateParts[1]), // 月
+              int.parse(dateParts[2]), // 日
+              int.parse(timeParts[0]), // 时
+              int.parse(timeParts[1]), // 分
+              timeParts.length > 2 ? int.parse(timeParts[2]) : 0, // 秒
+            );
+          }
+        }
+        developer.log('日期时间格式无法识别: $dateTimeStr', name: 'WaitingShipmentPage');
+        return null;
+      } catch (e) {
+        developer.log('日期时间解析异常: $e, 原始值: $dateTimeStr',
+            name: 'WaitingShipmentPage');
+        return null;
+      }
+    }
+  }
+
+  // 获取商品图片
+  Future<void> _fetchProductImage(int productId) async {
+    try {
+      developer.log('获取商品图片: productId=$productId',
+          name: 'WaitingShipmentPage');
+
+      // 记录当前处理的商品ID，以便在日志中跟踪
+      final String logPrefix = '[商品ID:$productId]';
+      developer.log('$logPrefix 开始获取商品图片', name: 'WaitingShipmentPage');
+
+      // 使用商品详情接口获取单个商品信息
+      final detailResponse =
+          await HttpUtil().get('${Api.productDetail}$productId');
+
+      if (detailResponse.isSuccess && detailResponse.data != null) {
+        developer.log('$logPrefix 商品详情数据: ${detailResponse.data}',
+            name: 'WaitingShipmentPage');
+
+        // 从商品详情中提取mainImageUrl
+        final productData = detailResponse.data as Map<String, dynamic>;
+        String? imageUrl;
+
+        if (productData.containsKey('mainImageUrl')) {
+          imageUrl = productData['mainImageUrl'] as String?;
+          developer.log('$logPrefix 从商品详情获取到图片: $imageUrl',
+              name: 'WaitingShipmentPage');
+        }
+
+        // 如果从商品详情找到图片URL
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          final processedUrl = ImageUrlUtil.processImageUrl(imageUrl);
+          if (mounted) {
+            setState(() {
+              _productImages[productId] = processedUrl;
+            });
+          }
+          developer.log('$logPrefix 成功获取商品图片(详情): url=$processedUrl',
+              name: 'WaitingShipmentPage');
+          return; // 已成功获取图片，直接返回
+        }
+      }
+
+      // 方法2: 尝试通过商品图片接口获取图片
+      final imageResponse = await HttpUtil().get('${Api.imageList}$productId');
+
+      if (imageResponse.isSuccess && imageResponse.data != null) {
+        developer.log('$logPrefix 商品图片列表数据: ${imageResponse.data}',
+            name: 'WaitingShipmentPage');
+
+        if (imageResponse.data is List &&
+            (imageResponse.data as List).isNotEmpty) {
+          final imageList = imageResponse.data as List;
+          String? imageUrl;
+
+          // 查找主图或第一张图片
+          for (var image in imageList) {
+            if (image is Map<String, dynamic> &&
+                image.containsKey('imageUrl')) {
+              if (image.containsKey('isMain') && image['isMain'] == true) {
+                imageUrl = image['imageUrl'];
+                break;
+              } else if (imageUrl == null) {
+                // 如果没有找到主图，使用第一张图片
+                imageUrl = image['imageUrl'];
+              }
+            }
+          }
+
+          if (imageUrl != null && imageUrl.isNotEmpty) {
+            final processedUrl = ImageUrlUtil.processImageUrl(imageUrl);
+            if (mounted) {
+              setState(() {
+                _productImages[productId] = processedUrl;
+              });
+            }
+            developer.log('$logPrefix 成功获取商品图片(图片列表): url=$processedUrl',
+                name: 'WaitingShipmentPage');
+            return;
+          }
+        }
+      } else {
+        developer.log('$logPrefix 获取商品图片列表失败: ${imageResponse.message}',
+            name: 'WaitingShipmentPage');
+      }
+
+      // 方法3: 尝试通过商品列表接口获取商品信息
+      final listResponse = await HttpUtil().get(
+        Api.productList,
+        params: {
+          'productId': productId.toString(),
+          'pageNum': '1',
+          'pageSize': '1'
+        },
+      );
+
+      if (listResponse.isSuccess && listResponse.data != null) {
+        developer.log('$logPrefix 商品列表数据: ${listResponse.data}',
+            name: 'WaitingShipmentPage');
+
+        // 检查返回数据结构
+        if (listResponse.data is Map<String, dynamic> &&
+            listResponse.data['list'] is List &&
+            (listResponse.data['list'] as List).isNotEmpty) {
+          final productData = (listResponse.data['list'] as List).first;
+          if (productData is Map<String, dynamic> &&
+              productData.containsKey('mainImageUrl')) {
+            final imageUrl = productData['mainImageUrl'] as String?;
+            if (imageUrl != null && imageUrl.isNotEmpty) {
+              final processedUrl = ImageUrlUtil.processImageUrl(imageUrl);
+              if (mounted) {
+                setState(() {
+                  _productImages[productId] = processedUrl;
+                });
+              }
+              developer.log('$logPrefix 成功获取商品图片(商品列表): url=$processedUrl',
+                  name: 'WaitingShipmentPage');
+              return;
+            }
+          }
+        }
+      } else {
+        developer.log('$logPrefix 获取商品列表数据失败: ${listResponse.message}',
+            name: 'WaitingShipmentPage');
+      }
+
+      developer.log('$logPrefix 无法获取商品图片，尝试所有方法均已失败',
+          name: 'WaitingShipmentPage');
+    } catch (e) {
+      developer.log('获取商品图片异常: $e, productId=$productId',
+          name: 'WaitingShipmentPage', error: e);
+    }
+  }
+
+  // 获取商品图片URL
+  String? _getProductImageUrl(Order order) {
+    developer.log(
+        '获取商品图片URL - 订单ID: ${order.orderId}, 商品ID: ${order.productId}',
+        name: 'WaitingShipmentPage');
+
+    // 优先使用订单中的商品图片
+    if (order.productImage != null && order.productImage!.isNotEmpty) {
+      developer.log('使用订单中的商品图片: ${order.productImage}',
+          name: 'WaitingShipmentPage');
+      final processedUrl = ImageUrlUtil.processImageUrl(order.productImage);
+      developer.log('处理后的订单图片URL: $processedUrl', name: 'WaitingShipmentPage');
+      return processedUrl;
+    }
+
+    // 再使用从商品列表获取的图片
+    if (_productImages.containsKey(order.productId)) {
+      developer.log('使用从商品列表获取的图片: ${_productImages[order.productId]}',
+          name: 'WaitingShipmentPage');
+      return _productImages[order.productId];
+    }
+
+    developer.log(
+        '订单和商品列表均无图片: orderId=${order.orderId}, productId=${order.productId}',
+        name: 'WaitingShipmentPage');
+    return null;
   }
 
   // 催促发货
@@ -222,6 +436,15 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
   }
 
   Widget _buildOrderCard(Order order) {
+    // 获取商品图片URL
+    final imageUrl = _getProductImageUrl(order);
+
+    // 订单创建时间
+    String formattedCreatedTime = '下单时间: ${order.createdTime}';
+    if (order.payTime != null && order.payTime!.isNotEmpty) {
+      formattedCreatedTime = '付款时间: ${order.payTime}';
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
@@ -237,7 +460,7 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(
+                Expanded(
                   child: Text(
                     '订单号: ${order.orderNo}',
                     style: const TextStyle(
@@ -272,18 +495,88 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 商品图片占位
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.image,
-                    color: Colors.grey,
-                  ),
+                // 商品图片
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: imageUrl != null && imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                developer.log('图片加载错误: $error',
+                                    name: 'WaitingShipmentPage');
+                                return Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey[200],
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image,
+                                          color: Colors.grey),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        '加载失败',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey[100],
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.image,
+                                color: Colors.grey,
+                              ),
+                            ),
+                    ),
+                    // 图片来源提示（仅调试使用）
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        order.productImage != null &&
+                                order.productImage!.isNotEmpty
+                            ? '订单图片'
+                            : imageUrl != null
+                                ? '商品图片'
+                                : '无图片',
+                        style: const TextStyle(fontSize: 8, color: Colors.grey),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 12),
                 // 商品详情
@@ -292,6 +585,7 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
+                      // 商品标题
                       Text(
                         order.productTitle,
                         style: const TextStyle(
@@ -302,217 +596,97 @@ class _WaitingShipmentPageState extends State<WaitingShipmentPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            flex: 1,
-                            child: Text(
-                              '¥${order.paymentAmount.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Flexible(
-                            flex: 2,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '下单时间: ${order.createdTime.split(' ')[0]}',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                // 移除对不存在的 paymentTime 属性的引用
-                                Text(
-                                  '订单状态: 已付款',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      // 创建时间
+                      Text(
+                        formattedCreatedTime,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
                       ),
+                      const SizedBox(height: 4),
+                      // 收货地址，如果有的话
+                      if (order.address != null)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.location_on,
+                                size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${order.address!.province} ${order.address!.city} ${order.address!.district} ${order.address!.detailAddress}',
+                                style: const TextStyle(fontSize: 13),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
               ],
             ),
-
             const SizedBox(height: 12),
-
-            // 收件信息
-            if (order.address != null) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 收货人和电话信息
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        const Icon(Icons.person, size: 16, color: Colors.grey),
-                        Flexible(
-                          child: Text(
-                            '收货人: ${order.address!.receiverName}',
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.phone, size: 16, color: Colors.grey),
-                        Flexible(
-                          child: Text(
-                            order.address!.receiverPhone,
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    // 地址信息
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 16, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '${order.address!.province} ${order.address!.city} ${order.address!.district} ${order.address!.detailAddress}',
-                            style: const TextStyle(fontSize: 13),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
 
             // 价格信息
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(
+                Expanded(
                   child: Text(
-                    '商品金额',
+                    '实付金额',
                     style: TextStyle(color: Colors.grey[600]),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Text('¥${order.orderAmount.toStringAsFixed(2)}'),
-              ],
-            ),
-            const SizedBox(height: 4),
-
-            if (order.deliveryFee != null) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      '运费',
-                      style: TextStyle(color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Text('¥${order.deliveryFee!.toStringAsFixed(2)}'),
-                ],
-              ),
-              const SizedBox(height: 4),
-            ],
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Flexible(
-                  child: Text(
-                    '实付款',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
                   '¥${order.paymentAmount.toStringAsFixed(2)}',
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
 
-            const Divider(),
-
-            // 备注信息
-            if (order.remark != null && order.remark!.isNotEmpty) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Flexible(
-                    flex: 1,
-                    child: Text(
-                      '备注: ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Expanded(
-                    flex: 5,
-                    child: Text(
-                      order.remark!,
-                      style: const TextStyle(fontSize: 13),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            // 催促发货按钮
-            Align(
-              alignment: Alignment.centerRight,
-              child: SizedBox(
-                width: 120,
-                child: ElevatedButton.icon(
+            // 操作按钮区
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton(
                   onPressed: () => _sendReminder(order),
-                  icon: const Icon(Icons.notifications_active, size: 16),
-                  label: const Text('催一催'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
+                    side: BorderSide(color: Theme.of(context).primaryColor),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
+                  child: const Text('催促发货'),
                 ),
-              ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    // 跳转到订单详情页
+                    /*Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderDetailPage(orderId: order.orderId),
+                      ),
+                    );*/
+                  },
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text('查看详情'),
+                ),
+              ],
             ),
           ],
         ),

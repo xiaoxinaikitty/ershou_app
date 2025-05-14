@@ -13,6 +13,9 @@ class Order {
   final double? deliveryFee;
   final String? remark;
   final String createdTime;
+  final String? payTime; // 支付时间
+  final String? productImage; // 商品图片
+  final String? alipayNo; // 支付宝交易号
   final Address? address;
 
   Order({
@@ -30,6 +33,9 @@ class Order {
     this.deliveryFee,
     this.remark,
     required this.createdTime,
+    this.payTime,
+    this.productImage,
+    this.alipayNo,
     this.address,
   });
 
@@ -78,6 +84,11 @@ class Order {
           : null,
       remark: json['remark']?.toString(),
       createdTime: parseStringSafely(json['createdTime'], defaultValue: '未知时间'),
+      payTime: json['payTime']?.toString(),
+      productImage: json['productImage']?.toString() ??
+          json['productImageUrl']?.toString(),
+      alipayNo:
+          json['alipayNo']?.toString() ?? json['paymentTradeNo']?.toString(),
       address: json['address'] != null
           ? Address.fromJson(json['address'] as Map<String, dynamic>)
           : null,
